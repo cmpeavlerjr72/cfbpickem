@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "CFB Pick'em",
+    "slug": "cfb-pickem",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cfbpickem.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.cfbpickem.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0f2440",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0f2440"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "eaf41eb9-4aea-419b-950f-b16acf0f7a5a"
+      }
+    },
+    "owner": "cmpeavlerjr72",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/eaf41eb9-4aea-419b-950f-b16acf0f7a5a"
+    }
+  }
+}
