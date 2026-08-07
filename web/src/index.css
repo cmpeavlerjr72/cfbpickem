@@ -1,0 +1,39 @@
+:root {
+  --navy: #0f2440;
+  --navy-light: #1b3a63;
+  --green: #15803d;
+  --green-soft: #f0fdf4;
+  --green-border: #86efac;
+  --red: #dc2626;
+  --red-soft: #fef2f2;
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-dim: #64748b;
+
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}

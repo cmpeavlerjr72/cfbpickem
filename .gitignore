@@ -1,0 +1,29 @@
+node_modules/
+dist/
+build/
+
+# Expo
+.expo/
+.expo-shared/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs / OS
+*.log
+npm-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+
+# mobile/ has its own nested .git repo, which git would record as an empty
+# gitlink rather than real files. Excluded until that nested repo is removed
+# (`rm -rf mobile/.git`), at which point drop this line and commit mobile/.
+mobile/
