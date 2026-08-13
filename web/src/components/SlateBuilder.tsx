@@ -386,7 +386,7 @@ export function SlateBuilder({
             onChange={(e) => setFilter(e.target.value)}
           />
           <div className="slate-candidates">
-            {candidates.slice(0, 40).map((game) => (
+            {candidates.map((game) => (
               <button
                 key={game.id}
                 type="button"
@@ -404,9 +404,10 @@ export function SlateBuilder({
                 <span className="slate-row-time">{kickoffLabel(game)}</span>
               </button>
             ))}
-            {candidates.length > 40 && (
-              <p className="slate-more">Search to narrow down — {candidates.length - 40} more games this week.</p>
-            )}
+            <p className="slate-more">
+              {candidates.length} {candidates.length === 1 ? 'game' : 'games'} this week
+              {filter.trim() ? ' matching your search' : ''} · ranked matchups first
+            </p>
           </div>
         </section>
       )}
