@@ -5,6 +5,9 @@
 
 export type PickSide = 'home' | 'away';
 
+/** How the pool plays: against the spread or straight-up winners. */
+export type PickType = 'ats' | 'su';
+
 /** One game on the commissioner's weekly slate. */
 export interface SlateGame {
   gameId: string;
@@ -18,12 +21,14 @@ export interface SlateGame {
   isTiebreaker: boolean;
 }
 
-/** The commissioner's 12-game slate for one week, with spreads locked Monday. */
+/** The commissioner's weekly slate (any number of games they choose). */
 export interface WeekSlate {
   season: number;
   seasonType: number;
   week: number;
   games: SlateGame[];
+  /** Stamped from pool settings at save time; absent on legacy slates = ATS. */
+  pickType?: PickType;
   /** Once published, spreads are frozen (they're the Monday lines). */
   published: boolean;
   /** Set when the slate is published. */
@@ -55,16 +60,19 @@ export interface PoolProfile {
 
 export interface PoolSettings {
   name: string;
-  /** Number of games on a weekly slate. */
+  /** Target games per weekly slate — a guide for the commissioner, not a hard cap. */
   slateSize: number;
   /** Points awarded when a pick pushes (spread ties). */
   pushPoints: number;
+  /** Against the spread or straight-up. */
+  pickType: PickType;
 }
 
 export const DEFAULT_SETTINGS: PoolSettings = {
   name: 'CFB Pick’em Pool',
   slateSize: 12,
   pushPoints: 0.5,
+  pickType: 'ats',
 };
 
 /** Market odds that each side covers its spread (0–1), from Kalshi. */

@@ -78,6 +78,7 @@ export function PickSheet({
                 key={game.id}
                 game={game}
                 slateGame={sg}
+                pickType={slate.pickType ?? 'ats'}
                 result={results[game.id]}
                 locked={isGameLocked(game, results[game.id])}
                 pickedSide={entry.picks[game.id] ?? null}

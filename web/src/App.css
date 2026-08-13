@@ -1173,3 +1173,19 @@ section:first-child .day-header {
   font-size: 13px;
   color: var(--text);
 }
+
+.pool-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.pool-settings-row .slate-tb {
+  font-size: 13px;
+}
+
+.pool-settings-row .slate-spread input {
+  width: 60px;
+}

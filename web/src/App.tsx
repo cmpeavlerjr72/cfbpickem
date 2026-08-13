@@ -154,6 +154,14 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
     });
   };
 
+  const handleSettingsSave = (s: PoolSettings) => {
+    setSettings(s);
+    store.saveSettings(s).catch((err) => {
+      alert(`Couldn’t save settings: ${err instanceof Error ? err.message : 'unknown error'}`);
+      store.getSettings().then(setSettings);
+    });
+  };
+
   const slateGameIds = slate?.published ? slate.games.map((g) => g.gameId) : [];
   const pickedCount = slateGameIds.filter((id) => myEntry.picks[id]).length;
   const allPicked = slateGameIds.length > 0 && pickedCount === slateGameIds.length;
@@ -266,6 +274,7 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
             season={season.season}
             inviteCode={inviteCode}
             onSave={handleSlateSave}
+            onSaveSettings={handleSettingsSave}
           />
         )}
       </main>

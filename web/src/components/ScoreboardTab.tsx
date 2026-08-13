@@ -70,6 +70,7 @@ export function ScoreboardTab({
             <AtsGameCard
               game={game}
               slateGame={sg}
+              pickType={slate.pickType ?? 'ats'}
               result={result}
               locked
               pickedSide={myEntry?.picks[game.id] ?? null}

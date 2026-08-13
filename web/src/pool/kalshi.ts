@@ -15,7 +15,10 @@ import type { CoverOdds, WeekSlate } from './types';
 const KALSHI_PROXY = import.meta.env.DEV
   ? '/kalshi'
   : `${import.meta.env.VITE_SUPABASE_URL ?? ''}/functions/v1/kalshi`;
-const SERIES = 'KXNCAAFSPREAD';
+
+// ATS pools use the spread series; straight-up pools use the moneyline one.
+const SPREAD_SERIES = 'KXNCAAFSPREAD';
+const GAME_SERIES = 'KXNCAAFGAME';
 
 interface KalshiEvent {
   event_ticker: string;
@@ -80,15 +83,16 @@ interface ParsedEvent {
   teamBlob: string;
 }
 
-let eventsCache: { fetchedAt: number; events: ParsedEvent[] } | null = null;
+const eventsCache = new Map<string, { fetchedAt: number; events: ParsedEvent[] }>();
 const EVENTS_TTL = 10 * 60 * 1000;
 
-async function listSpreadEvents(): Promise<ParsedEvent[]> {
-  if (eventsCache && Date.now() - eventsCache.fetchedAt < EVENTS_TTL) return eventsCache.events;
+async function listSeriesEvents(series: string): Promise<ParsedEvent[]> {
+  const cached = eventsCache.get(series);
+  if (cached && Date.now() - cached.fetchedAt < EVENTS_TTL) return cached.events;
   const out: ParsedEvent[] = [];
   let cursor: string | undefined;
   for (let page = 0; page < 10; page++) {
-    const qs = `series_ticker=${SERIES}&status=open&limit=200${cursor ? `&cursor=${cursor}` : ''}`;
+    const qs = `series_ticker=${series}&status=open&limit=200${cursor ? `&cursor=${cursor}` : ''}`;
     const json = await kalshiGet<{ events?: KalshiEvent[]; cursor?: string }>(`/events?${qs}`);
     for (const ev of json.events ?? []) {
       const chunk = ev.event_ticker.split('-')[1];
@@ -98,7 +102,7 @@ async function listSpreadEvents(): Promise<ParsedEvent[]> {
     cursor = json.cursor || undefined;
     if (!cursor) break;
   }
-  eventsCache = { fetchedAt: Date.now(), events: out };
+  eventsCache.set(series, { fetchedAt: Date.now(), events: out });
   return out;
 }
 
@@ -149,6 +153,31 @@ function marketTeamCode(ticker: string): string | null {
 }
 
 /**
+ * Straight-up pools: odds each team wins, from the moneyline series.
+ * Each team has its own "TEAM wins" market; if only one side has a clean
+ * two-sided book, the other side is its complement.
+ */
+async function gameWinOdds(event: ParsedEvent, game: Game): Promise<CoverOdds | null> {
+  const homeCode = teamCode(game.home);
+  const awayCode = teamCode(game.away);
+  if (!homeCode || !awayCode) return null;
+  const markets = await eventMarkets(event.ticker);
+  let homeP: number | null = null;
+  let awayP: number | null = null;
+  for (const market of markets) {
+    const code = marketTeamCode(market.ticker);
+    if (code === homeCode) homeP = midProbability(market) ?? homeP;
+    else if (code === awayCode) awayP = midProbability(market) ?? awayP;
+  }
+  if (homeP == null && awayP == null) return null;
+  return {
+    home: homeP ?? (awayP != null ? 1 - awayP : null),
+    away: awayP ?? (homeP != null ? 1 - homeP : null),
+    label: 'Kalshi',
+  };
+}
+
+/**
  * Odds that each side covers the pool's locked spread. Uses the rung whose
  * floor_strike is closest to the favorite's line (within 1 point) — Kalshi's
  * lines may drift from the Monday number, so this is "market's view of a
@@ -196,9 +225,10 @@ export async function fetchCoverOddsForSlate(
   gamesById: Map<string, Game>,
 ): Promise<Record<string, CoverOdds>> {
   const out: Record<string, CoverOdds> = {};
+  const straightUp = slate.pickType === 'su';
   let events: ParsedEvent[];
   try {
-    events = await listSpreadEvents();
+    events = await listSeriesEvents(straightUp ? GAME_SERIES : SPREAD_SERIES);
   } catch {
     return out; // proxy not running / network down — odds are optional
   }
@@ -208,7 +238,9 @@ export async function fetchCoverOddsForSlate(
     try {
       const event = matchEvent(events, game);
       if (!event) continue;
-      const odds = await gameCoverOdds(event, game, slateGame.homeSpread);
+      const odds = straightUp
+        ? await gameWinOdds(event, game)
+        : await gameCoverOdds(event, game, slateGame.homeSpread);
       if (odds) out[slateGame.gameId] = odds;
     } catch {
       // one game's market failing must not drop the rest

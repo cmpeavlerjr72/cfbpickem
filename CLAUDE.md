@@ -19,10 +19,14 @@ in one catch-up pass, then resume the rule.
 
 ## Pool model (web, funofficepools.com-style)
 
-- Commissioner picks 12 games/week, enters spreads **locked as of Monday** (publish freezes
-  them), and flags the College GameDay game as the tiebreaker (guess the final score,
-  closest total wins). Players pick each game ATS, 1 pt/game, push = ½ pt (configurable).
-  Weekly winners + season standings (total pts, weekly wins break ties).
+- Commissioner picks any number of games/week (pool setting `slateSize` is a soft target
+  only) and the pool plays **ATS or straight-up** (`pools.pick_type`, stamped onto each
+  slate at save so mid-season switches don't rewrite history; SU slates store
+  homeSpread=0 so the same grading code works). ATS spreads are **locked as of Monday**
+  (publish freezes them). One game is the College GameDay tiebreaker (guess the final
+  score, closest total wins). 1 pt/game, push = ½ pt (configurable). Weekly winners +
+  season standings (total pts, weekly wins break ties). SU pools show Kalshi moneyline
+  odds (`KXNCAAFGAME`) instead of spread odds.
 - Code: `web/src/pool/` — `types.ts` (model), `store.ts` (**PoolStore interface = the
   Supabase seam**; LocalPoolStore/localStorage for now), `scoring.ts` (pure ATS
   grading/leaderboards), `kalshi.ts` (cover odds). UI: `PoolSetup`, `SlateBuilder`,

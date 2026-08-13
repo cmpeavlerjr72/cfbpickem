@@ -4,7 +4,7 @@
 
 import type { Game, Team } from '../types';
 import type { GameResult } from '../results';
-import type { CoverOdds, PickSide, SlateGame } from '../pool/types';
+import type { CoverOdds, PickSide, PickType, SlateGame } from '../pool/types';
 import { formatSpread } from '../pool/types';
 import { coverMargin, gradeAts } from '../pool/scoring';
 
@@ -17,6 +17,9 @@ function formatKickoff(iso: string): string {
 interface AtsTeamRowProps {
   team: Team;
   spread: number;
+  showSpread: boolean;
+  coveringLabel: string;
+  oddsTitle: string;
   picked: boolean;
   locked: boolean;
   score: number | null;
@@ -31,6 +34,9 @@ interface AtsTeamRowProps {
 function AtsTeamRow({
   team,
   spread,
+  showSpread,
+  coveringLabel,
+  oddsTitle,
   picked,
   locked,
   score,
@@ -61,17 +67,17 @@ function AtsTeamRow({
       <span className="team-name">
         {team.rank != null && <span className="team-rank">#{team.rank}</span>}
         <span className="team-school">{team.school}</span>
-        <span className="team-spread">{formatSpread(spread)}</span>
+        {showSpread && <span className="team-spread">{formatSpread(spread)}</span>}
       </span>
       {odds != null && (
-        <span className="cover-odds" title="Market odds to cover">
+        <span className="cover-odds" title={oddsTitle}>
           {Math.round(odds * 100)}%
         </span>
       )}
       {showScore && score != null && (
         <span className={`score${covering ? ' winner' : ''}`}>{score}</span>
       )}
-      {showScore && covering && !final && <span className="covering-tag">covering</span>}
+      {showScore && covering && !final && <span className="covering-tag">{coveringLabel}</span>}
       <span
         className={`pick-indicator${picked ? (lost ? ' loss' : push && final ? ' push' : ' on') : ''}`}
         aria-hidden="true"
@@ -85,6 +91,7 @@ function AtsTeamRow({
 interface AtsGameCardProps {
   game: Game;
   slateGame: SlateGame;
+  pickType?: PickType;
   result?: GameResult | null;
   locked: boolean;
   pickedSide: PickSide | null;
@@ -95,6 +102,7 @@ interface AtsGameCardProps {
 export function AtsGameCard({
   game,
   slateGame,
+  pickType = 'ats',
   result,
   locked,
   pickedSide,
@@ -111,6 +119,9 @@ export function AtsGameCard({
   const awayCovering = started && margin != null ? margin < 0 : null;
   const push = final && margin === 0;
   const grade = pickedSide ? gradeAts(pickedSide, slateGame, result) : null;
+  const ats = pickType === 'ats';
+  const coveringLabel = ats ? 'covering' : 'leading';
+  const oddsTitle = ats ? 'Market odds to cover' : 'Market odds to win';
 
   return (
     <div className={`game-card${slateGame.isTiebreaker ? ' tiebreaker-card' : ''}`}>
@@ -126,6 +137,9 @@ export function AtsGameCard({
       <AtsTeamRow
         team={away}
         spread={-slateGame.homeSpread}
+        showSpread={ats}
+        coveringLabel={coveringLabel}
+        oddsTitle={oddsTitle}
         picked={pickedSide === 'away'}
         locked={locked}
         score={result?.awayScore ?? null}
@@ -142,6 +156,9 @@ export function AtsGameCard({
       <AtsTeamRow
         team={home}
         spread={slateGame.homeSpread}
+        showSpread={ats}
+        coveringLabel={coveringLabel}
+        oddsTitle={oddsTitle}
         picked={pickedSide === 'home'}
         locked={locked}
         score={result?.homeScore ?? null}

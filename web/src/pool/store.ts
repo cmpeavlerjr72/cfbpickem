@@ -101,6 +101,7 @@ export function newPlayerId(): string {
 
 interface SlateRow {
   games: WeekSlate['games'];
+  pick_type: string;
   published: boolean;
   spreads_locked_at: string | null;
   updated_at: string;
@@ -144,7 +145,7 @@ export class SupabasePoolStore implements PoolStore {
   async getSettings(): Promise<PoolSettings> {
     const { data, error } = await this.db
       .from('pools')
-      .select('name, slate_size, push_points')
+      .select('name, slate_size, push_points, pick_type')
       .eq('id', this.poolId)
       .single();
     if (error || !data) return DEFAULT_SETTINGS;
@@ -152,6 +153,7 @@ export class SupabasePoolStore implements PoolStore {
       name: data.name,
       slateSize: data.slate_size,
       pushPoints: Number(data.push_points),
+      pickType: data.pick_type === 'su' ? 'su' : 'ats',
     };
   }
 
@@ -162,6 +164,7 @@ export class SupabasePoolStore implements PoolStore {
         name: settings.name,
         slate_size: settings.slateSize,
         push_points: settings.pushPoints,
+        pick_type: settings.pickType,
       })
       .eq('id', this.poolId);
     if (error) throw new Error(error.message);
@@ -170,7 +173,7 @@ export class SupabasePoolStore implements PoolStore {
   async getSlate(season: number, seasonType: number, week: number): Promise<WeekSlate | null> {
     const { data, error } = await this.db
       .from('slates')
-      .select('games, published, spreads_locked_at, updated_at')
+      .select('games, pick_type, published, spreads_locked_at, updated_at')
       .eq('pool_id', this.poolId)
       .eq('season', season)
       .eq('season_type', seasonType)
@@ -182,6 +185,7 @@ export class SupabasePoolStore implements PoolStore {
       seasonType,
       week,
       games: data.games ?? [],
+      pickType: data.pick_type === 'su' ? 'su' : 'ats',
       published: data.published,
       spreadsLockedAt: data.spreads_locked_at,
       updatedAt: data.updated_at,
@@ -196,6 +200,7 @@ export class SupabasePoolStore implements PoolStore {
         season_type: slate.seasonType,
         week: slate.week,
         games: slate.games,
+        pick_type: slate.pickType ?? 'ats',
         published: slate.published,
         spreads_locked_at: slate.spreadsLockedAt,
       },
