@@ -15,6 +15,8 @@ build/
 .env
 .env.*
 !.env.example
+# public client config (anon key ships in the bundle anyway); secrets stay in .env.local
+!.env.production
 
 # Logs / OS
 *.log

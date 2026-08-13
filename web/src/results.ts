@@ -8,6 +8,13 @@ import { picksStorageKey } from './types';
 const SCOREBOARD =
   'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard';
 
+export interface EspnOdds {
+  details: string | null; // e.g. "UGA -6.5"
+  spread: number | null; // home POV: negative = home favored
+  overUnder: number | null;
+  provider: string | null;
+}
+
 export interface GameResult {
   gameId: string;
   statusName: string;
@@ -17,6 +24,15 @@ export interface GameResult {
   homeScore: number | null;
   awayScore: number | null;
   winnerTeamId: string | null;
+  // Live situation (in-progress games only; see monte-site's ESPN notes)
+  period: number | null;
+  clock: string | null;
+  possessionTeamId: string | null;
+  downDistance: string | null;
+  isRedZone: boolean;
+  lastPlay: string | null;
+  /** ESPN's line for the game (pregame) — used to prefill commissioner spreads. */
+  odds: EspnOdds | null;
 }
 
 /** gameId -> result */
@@ -55,6 +71,10 @@ function parseScoreboard(json: unknown): WeekResults {
         }
       }
     }
+    const situation = comp.situation ?? {};
+    const rawOdds = comp.odds?.[0] ?? null;
+    const spread = rawOdds ? Number(rawOdds.spread ?? rawOdds.pointSpread) : NaN;
+    const overUnder = rawOdds ? Number(rawOdds.overUnder ?? rawOdds.total) : NaN;
     results[event.id] = {
       gameId: event.id,
       statusName: statusType.name ?? 'STATUS_SCHEDULED',
@@ -64,9 +84,41 @@ function parseScoreboard(json: unknown): WeekResults {
       homeScore: home?.score != null ? Number(home.score) : null,
       awayScore: away?.score != null ? Number(away.score) : null,
       winnerTeamId,
+      period: comp.status?.period ?? event.status?.period ?? null,
+      clock: comp.status?.displayClock ?? event.status?.displayClock ?? null,
+      possessionTeamId: situation.possession != null ? String(situation.possession) : null,
+      downDistance: situation.downDistanceText ?? situation.shortDownDistanceText ?? null,
+      isRedZone: situation.isRedZone === true,
+      lastPlay: situation.lastPlay?.text ?? null,
+      odds: rawOdds
+        ? {
+            details: rawOdds.details ?? null,
+            spread: Number.isFinite(spread) ? spread : null,
+            overUnder: Number.isFinite(overUnder) ? overUnder : null,
+            provider: rawOdds.provider?.name ?? null,
+          }
+        : null,
     };
   }
   return results;
+}
+
+/**
+ * Fresh scoreboard fetch with no started-week guard and no caching — used
+ * pregame for ESPN lines (commissioner spread prefill). Returns {} on error.
+ */
+export async function fetchWeekScoreboard(
+  season: number,
+  weekData: WeekData,
+): Promise<WeekResults> {
+  try {
+    const url = `${SCOREBOARD}?dates=${season}&seasontype=${weekData.seasonType}&week=${weekData.week}&groups=80&limit=400`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return parseScoreboard(await res.json());
+  } catch {
+    return {};
+  }
 }
 
 export function hasWeekStarted(week: WeekData): boolean {
