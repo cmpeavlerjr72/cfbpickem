@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import gamesJson from './data/games.json';
 import type { Game, SeasonData, WeekData } from './types';
-import { isGameLocked } from './results';
+import { fetchWeekScoreboard, isGameLocked } from './results';
 import { useWeekResults } from './live';
+import { spreadLockTime } from './pool/spreads';
 import type { CoverOdds, PickSide, PoolEntry, PoolProfile, PoolSettings, WeekSlate } from './pool/types';
 import { DEFAULT_SETTINGS } from './pool/types';
 import type { PoolStore } from './pool/store';
@@ -98,6 +99,75 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
       window.clearInterval(timer);
     };
   }, [slate, gamesById]);
+
+  // Pre-lock, spreads float with the market: overlay ESPN's current lines
+  // for display (grading always uses the stored, locked numbers).
+  const [liveLines, setLiveLines] = useState<Record<string, number>>({});
+  useEffect(() => {
+    setLiveLines({});
+    if (!slate || slate.pickType === 'su' || slate.spreadsLockedAt || slate.games.length === 0) return;
+    let cancelled = false;
+    const load = async () => {
+      if (document.hidden) return;
+      const r = await fetchWeekScoreboard(season.season, week);
+      if (cancelled) return;
+      const lines: Record<string, number> = {};
+      for (const g of slate.games) {
+        const s = r[g.gameId]?.odds?.spread;
+        if (s != null) lines[g.gameId] = s;
+      }
+      setLiveLines(lines);
+    };
+    load();
+    const timer = window.setInterval(load, 30 * 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [slate, week]);
+
+  const displaySlate = useMemo<WeekSlate | null>(() => {
+    if (!slate || Object.keys(liveLines).length === 0) return slate;
+    return {
+      ...slate,
+      games: slate.games.map((g) =>
+        liveLines[g.gameId] != null ? { ...g, homeSpread: liveLines[g.gameId] } : g,
+      ),
+    };
+  }, [slate, liveLines]);
+
+  // Monday lock: if this (commissioner) browser is the first to notice the
+  // deadline passed, snapshot ESPN's lines into the slate and stamp it
+  // locked. A scheduled Edge Function does the same server-side, so this is
+  // just the fastest path — both are idempotent (locked slates are skipped).
+  useEffect(() => {
+    if (!profile.isCommissioner || !slate || slate.pickType === 'su' || slate.spreadsLockedAt) return;
+    if (slate.games.length === 0) return;
+    const kicks = slate.games
+      .map((g) => gamesById.get(g.gameId)?.date)
+      .filter((d): d is string => !!d)
+      .sort();
+    if (kicks.length === 0 || Date.now() < spreadLockTime(kicks[0]).getTime()) return;
+    let cancelled = false;
+    (async () => {
+      const r = await fetchWeekScoreboard(season.season, week);
+      if (cancelled) return;
+      const games = slate.games.map((g) => {
+        const s = r[g.gameId]?.odds?.spread;
+        return s != null ? { ...g, homeSpread: s } : g;
+      });
+      handleSlateSave({
+        ...slate,
+        games,
+        spreadsLockedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slate, profile, week, gamesById]);
 
   const myEntry = useMemo<PoolEntry>(() => {
     const existing = entries.find((e) => e.playerId === profile.playerId);
@@ -239,7 +309,7 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
         {tab === 'picks' && (
           <PickSheet
             week={week}
-            slate={slate}
+            slate={displaySlate}
             entry={myEntry}
             results={results}
             coverOdds={coverOdds}
@@ -250,7 +320,7 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
         {tab === 'board' && (
           <ScoreboardTab
             week={week}
-            slate={slate}
+            slate={displaySlate}
             entries={entries}
             results={results}
             coverOdds={coverOdds}

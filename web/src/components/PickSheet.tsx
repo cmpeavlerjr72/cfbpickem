@@ -6,6 +6,7 @@ import type { Game, WeekData } from '../types';
 import type { WeekResults } from '../results';
 import { isGameLocked } from '../results';
 import type { PickSide, PoolEntry, WeekSlate } from '../pool/types';
+import { spreadLockTime } from '../pool/spreads';
 import type { CoverOdds } from './AtsGameCard';
 import { AtsGameCard } from './AtsGameCard';
 
@@ -67,8 +68,27 @@ export function PickSheet({
 
   const tbLocked = tbEntry ? isGameLocked(tbEntry.game, results[tbEntry.game.id]) : true;
 
+  const linesFloating =
+    slate.pickType !== 'su' && !slate.spreadsLockedAt && slateGames.length > 0
+      ? Date.now() < spreadLockTime(slateGames[0].game.date).getTime()
+      : false;
+  const lockLabel = linesFloating
+    ? spreadLockTime(slateGames[0].game.date).toLocaleString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    : '';
+
   return (
     <>
+      {linesFloating && (
+        <div className="lines-note">
+          Spreads shown are live market numbers — they lock for good on {lockLabel}.
+        </div>
+      )}
       {dayGroups.map((group) => (
         <section key={group.day}>
           <h2 className="day-header">{group.day}</h2>

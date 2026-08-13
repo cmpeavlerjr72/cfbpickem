@@ -416,3 +416,7 @@ enabled = true
 [functions.kalshi]
 verify_jwt = false
 
+
+[functions.lock-spreads]
+verify_jwt = false
+

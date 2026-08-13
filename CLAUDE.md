@@ -22,8 +22,14 @@ in one catch-up pass, then resume the rule.
 - Commissioner picks any number of games/week (pool setting `slateSize` is a soft target
   only) and the pool plays **ATS or straight-up** (`pools.pick_type`, stamped onto each
   slate at save so mid-season switches don't rewrite history; SU slates store
-  homeSpread=0 so the same grading code works). ATS spreads are **locked as of Monday**
-  (publish freezes them). One game is the College GameDay tiebreaker (guess the final
+  homeSpread=0 so the same grading code works). ATS spreads are **never hand-entered**:
+  they track ESPN's line and freeze automatically at **Monday 00:00 ET of game week**
+  (fixed -5h offset — see `web/src/pool/spreads.ts`, mirrored in
+  `supabase/functions/lock-spreads`). The lock happens via an hourly pg_cron →
+  lock-spreads Edge Function, with the commissioner's browser as a faster lazy path;
+  both are idempotent (`spreads_locked_at` guards). Pre-lock, clients overlay live ESPN
+  lines for display; grading always uses the stored locked numbers. No line by lock
+  time = plays as PK. One game is the College GameDay tiebreaker (guess the final
   score, closest total wins). 1 pt/game, push = ½ pt (configurable). Weekly winners +
   season standings (total pts, weekly wins break ties). SU pools show Kalshi moneyline
   odds (`KXNCAAFGAME`) instead of spread odds.

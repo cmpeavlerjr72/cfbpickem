@@ -1189,3 +1189,25 @@ section:first-child .day-header {
 .pool-settings-row .slate-spread input {
   width: 60px;
 }
+
+.lines-note {
+  background: var(--amber-soft);
+  border: 1px solid var(--amber);
+  color: var(--amber);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.slate-line {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.slate-line em {
+  font-style: normal;
+  color: var(--text-dim);
+  font-size: 12px;
+}

@@ -1,6 +1,7 @@
 // Commissioner tools: pool settings (pick style, target size), choose the
-// week's slate games, enter the Monday spreads (ATS pools), mark the GameDay
-// tiebreaker, and publish (which locks spreads).
+// week's slate games, mark the GameDay tiebreaker, and publish. Spreads are
+// NOT editable — they track ESPN's line and freeze automatically at Monday
+// 12:00 AM ET of game week (see pool/spreads.ts).
 
 import { useEffect, useMemo, useState } from 'react';
 import type { Game, WeekData } from '../types';
@@ -8,15 +9,7 @@ import type { WeekResults } from '../results';
 import { fetchWeekScoreboard } from '../results';
 import type { PoolSettings, SlateGame, WeekSlate } from '../pool/types';
 import { formatSpread } from '../pool/types';
-
-/** Monday (00:00 local) of the week containing the slate's first kickoff. */
-function mondayOfWeek(week: WeekData): Date {
-  const first = Math.min(...week.games.map((g) => new Date(g.date).getTime()));
-  const d = new Date(first);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // back to Monday
-  return d;
-}
+import { spreadLockTime } from '../pool/spreads';
 
 function shortMatchup(game: Game): string {
   const away = game.away?.abbrev ?? game.away?.school ?? 'TBD';
@@ -43,7 +36,7 @@ interface SlateBuilderProps {
 }
 
 interface DraftGame {
-  homeSpread: string; // raw input text; parsed on publish
+  storedSpread: number | null; // last saved home-POV line
   isTiebreaker: boolean;
 }
 
@@ -61,7 +54,7 @@ export function SlateBuilder({
   const [error, setError] = useState<string | null>(null);
   const [espn, setEspn] = useState<WeekResults>({});
 
-  // ESPN's current lines, for one-tap spread prefill on slate day.
+  // Current ESPN lines — shown live until the Monday lock.
   useEffect(() => {
     let cancelled = false;
     setEspn({});
@@ -76,7 +69,7 @@ export function SlateBuilder({
   useEffect(() => {
     const next = new Map<string, DraftGame>();
     for (const g of slate?.games ?? []) {
-      next.set(g.gameId, { homeSpread: String(g.homeSpread), isTiebreaker: g.isTiebreaker });
+      next.set(g.gameId, { storedSpread: g.homeSpread, isTiebreaker: g.isTiebreaker });
     }
     setDraft(next);
     setError(null);
@@ -91,8 +84,20 @@ export function SlateBuilder({
   const ats = settings.pickType === 'ats';
   const published = slate?.published ?? false;
   const weekStarted = week.games.some((g) => new Date(g.date).getTime() <= Date.now());
-  const monday = mondayOfWeek(week);
-  const mondayLabel = monday.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+  const firstKick = week.games.length
+    ? week.games.reduce((min, g) => (g.date < min ? g.date : min), week.games[0].date)
+    : null;
+  const lockAt = firstKick ? spreadLockTime(firstKick) : null;
+  const linesLocked = !!slate?.spreadsLockedAt || (!!lockAt && Date.now() >= lockAt.getTime());
+  const lockLabel = lockAt
+    ? lockAt.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+    : '';
+
+  /** Best-known line for a game: locked slate value, else live ESPN. */
+  const lineFor = (gameId: string): number | null => {
+    if (linesLocked) return draft.get(gameId)?.storedSpread ?? null;
+    return espn[gameId]?.odds?.spread ?? draft.get(gameId)?.storedSpread ?? null;
+  };
 
   const selected = [...draft.keys()]
     .map((id) => gamesById.get(id))
@@ -123,22 +128,11 @@ export function SlateBuilder({
       if (next.has(gameId)) {
         next.delete(gameId);
       } else {
-        // Prefill with ESPN's current line (home POV) when it has one.
-        const line = ats ? espn[gameId]?.odds?.spread : null;
         next.set(gameId, {
-          homeSpread: line != null ? String(line) : '',
+          storedSpread: espn[gameId]?.odds?.spread ?? null,
           isTiebreaker: false,
         });
       }
-      return next;
-    });
-  };
-
-  const setSpread = (gameId: string, value: string) => {
-    setDraft((prev) => {
-      const next = new Map(prev);
-      const cur = next.get(gameId);
-      if (cur) next.set(gameId, { ...cur, homeSpread: value });
       return next;
     });
   };
@@ -154,16 +148,13 @@ export function SlateBuilder({
   const buildSlate = (publish: boolean): WeekSlate | null => {
     const games: SlateGame[] = [];
     for (const [gameId, d] of draft) {
-      const spread = parseFloat(d.homeSpread);
-      if (publish && ats && !Number.isFinite(spread)) {
-        setError(`Missing spread for ${shortMatchup(gamesById.get(gameId)!)}`);
-        return null;
-      }
-      games.push({
-        gameId,
-        homeSpread: ats && Number.isFinite(spread) ? spread : 0,
-        isTiebreaker: d.isTiebreaker,
-      });
+      // Until the Monday lock, saving refreshes each game to ESPN's current
+      // line; after the lock the stored number is the number.
+      const live = espn[gameId]?.odds?.spread;
+      const homeSpread = ats
+        ? (linesLocked ? (d.storedSpread ?? live ?? 0) : (live ?? d.storedSpread ?? 0))
+        : 0;
+      games.push({ gameId, homeSpread, isTiebreaker: d.isTiebreaker });
     }
     if (publish) {
       if (games.length === 0) {
@@ -183,7 +174,7 @@ export function SlateBuilder({
       games,
       pickType: settings.pickType,
       published: publish,
-      spreadsLockedAt: publish ? (slate?.spreadsLockedAt ?? new Date().toISOString()) : null,
+      spreadsLockedAt: slate?.spreadsLockedAt ?? null,
       updatedAt: new Date().toISOString(),
     };
   };
@@ -201,8 +192,8 @@ export function SlateBuilder({
   const unpublish = () => {
     if (!slate) return;
     if (weekStarted) return;
-    if (!confirm('Unpublish the slate? Spreads are supposed to be locked as of Monday.')) return;
-    onSave({ ...slate, published: false, spreadsLockedAt: null, updatedAt: new Date().toISOString() });
+    if (!confirm('Unpublish the slate so you can change the games?')) return;
+    onSave({ ...slate, published: false, updatedAt: new Date().toISOString() });
   };
 
   const countLabel =
@@ -266,22 +257,27 @@ export function SlateBuilder({
             {week.label} slate · {countLabel}
           </h2>
           {published ? (
-            <span className="slate-badge published">
-              Published{ats ? ' · spreads locked' : ''}
-            </span>
+            <span className="slate-badge published">Published</span>
           ) : (
             <span className="slate-badge draft">Draft</span>
           )}
+          {ats &&
+            (linesLocked ? (
+              <span className="slate-badge published">Lines locked</span>
+            ) : (
+              <span className="slate-badge draft">Lines float until {lockLabel}</span>
+            ))}
         </div>
         <p className="slate-status-note">
           {ats ? (
             <>
-              Use the lines as of Monday, {mondayLabel} — once you publish, spreads are frozen
-              for the week. Spread is entered for the <strong>home</strong> team (home favored =
-              negative, e.g. −6.5).
+              Spreads come straight from ESPN — nobody edits them. They move with the market
+              until <strong>Monday of game week ({lockLabel})</strong>, then freeze at that
+              number for grading. Games with no posted line play as PK unless one appears
+              before the lock.
             </>
           ) : (
-            <>Straight-up pool — players just pick winners, no spreads to enter.</>
+            <>Straight-up pool — players just pick winners, no spreads.</>
           )}
         </p>
         {error && <p className="slate-error">{error}</p>}
@@ -292,13 +288,13 @@ export function SlateBuilder({
                 Save draft
               </button>
               <button type="button" className="submit-btn" onClick={publish} disabled={draft.size === 0}>
-                {ats ? 'Publish & lock spreads' : 'Publish slate'}
+                Publish slate
               </button>
             </>
           )}
           {published && !weekStarted && (
             <button type="button" className="ghost-btn" onClick={unpublish}>
-              Unpublish to edit
+              Unpublish to edit games
             </button>
           )}
         </div>
@@ -310,8 +306,7 @@ export function SlateBuilder({
           <div className="slate-selected">
             {selected.map((game) => {
               const d = draft.get(game.id)!;
-              const parsed = parseFloat(d.homeSpread);
-              const awayLine = Number.isFinite(parsed) ? formatSpread(-parsed) : '—';
+              const line = lineFor(game.id);
               return (
                 <div key={game.id} className="slate-row">
                   <div className="slate-row-main">
@@ -320,33 +315,19 @@ export function SlateBuilder({
                   </div>
                   <div className="slate-row-controls">
                     {ats && (
-                      <>
-                        <label className="slate-spread">
-                          <span>{game.home?.abbrev ?? 'Home'}</span>
-                          <input
-                            type="number"
-                            step="0.5"
-                            inputMode="decimal"
-                            placeholder="-6.5"
-                            value={d.homeSpread}
-                            disabled={published}
-                            onChange={(e) => setSpread(game.id, e.target.value)}
-                          />
-                        </label>
-                        <span className="slate-away-line">
-                          {game.away?.abbrev ?? 'Away'} {awayLine}
-                        </span>
-                        {!published && espn[game.id]?.odds?.spread != null && (
-                          <button
-                            type="button"
-                            className="espn-line-btn"
-                            title={`Use ESPN's line${espn[game.id]!.odds!.provider ? ` (${espn[game.id]!.odds!.provider})` : ''}`}
-                            onClick={() => setSpread(game.id, String(espn[game.id]!.odds!.spread))}
-                          >
-                            ESPN: {espn[game.id]!.odds!.details ?? formatSpread(espn[game.id]!.odds!.spread!)}
-                          </button>
+                      <span className="slate-line">
+                        {line != null ? (
+                          <>
+                            {game.home?.abbrev ?? 'Home'}{' '}
+                            <strong>{formatSpread(line)}</strong>
+                            <em>{linesLocked ? ' · locked' : ' · live'}</em>
+                          </>
+                        ) : (
+                          <>
+                            No line yet <em>· plays as PK if none by lock</em>
+                          </>
                         )}
-                      </>
+                      </span>
                     )}
                     <label className={`slate-tb${d.isTiebreaker ? ' on' : ''}`}>
                       <input
@@ -401,6 +382,9 @@ export function SlateBuilder({
                   {game.home?.rank != null && <em>#{game.home.rank} </em>}
                   {game.home?.school}
                 </span>
+                {ats && espn[game.id]?.odds?.spread != null && (
+                  <span className="slate-away-line">{espn[game.id]!.odds!.details ?? formatSpread(espn[game.id]!.odds!.spread!)}</span>
+                )}
                 <span className="slate-row-time">{kickoffLabel(game)}</span>
               </button>
             ))}
