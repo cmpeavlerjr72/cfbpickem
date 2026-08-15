@@ -234,17 +234,15 @@ otp_length = 6
 otp_expiry = 3600
 
 # Custom SMTP via Resend (key stays out of the repo — set RESEND_API_KEY when
-# running `supabase config push`). Until a domain is verified in Resend, the
-# sender must be onboarding@resend.dev and delivery only works to the Resend
-# account owner's address; once the domain lands, change admin_email to
-# noreply@<domain> and push again.
+# running `supabase config push`). Domain pattersonspickem.com is verified in
+# Resend (DNS at Squarespace).
 [auth.email.smtp]
 enabled = true
 host = "smtp.resend.com"
 port = 587
 user = "resend"
 pass = "env(RESEND_API_KEY)"
-admin_email = "onboarding@resend.dev"
+admin_email = "noreply@pattersonspickem.com"
 sender_name = "Patterson Pick'em"
 
 # Uncomment to customize email template

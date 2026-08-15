@@ -16,31 +16,21 @@ New signups send no email (confirmations off), but **every magic-link-era member
 use "Forgot password?" once** to set a password, and that sends an email. Without this,
 onboarding night stalls.
 
-**Status 2026-08-15:** SMTP is LIVE in interim mode. Resend account exists, API key is
-wired in (`[auth.email.smtp]` in config.toml, secret via `env(RESEND_API_KEY)`, pushed),
-rate limit raised 2→30/hr, and a test reset was accepted end-to-end. Interim limitation:
-sender is `onboarding@resend.dev`, and without a verified domain **Resend only delivers
-to the Resend account owner's own address** — so pool-wide resets DON'T work yet.
+**Status 2026-08-15: COMPLETE (technical side).** Custom SMTP live via Resend:
+`[auth.email.smtp]` in config.toml (secret via `env(RESEND_API_KEY)` — key in session
+memory, never the repo), sender `noreply@pattersonspickem.com`, rate limit 30/hr.
+Domain **pattersonspickem.com** (note the extra `s` vs the `pattersonpickem` Render
+subdomain) purchased same day, DNS at Squarespace (DKIM on `resend._domainkey`, MX+SPF
+on `send`), verified in Resend, and a test reset was accepted end-to-end from the
+domain sender. Note: the Resend API key is send-only restricted — check domain health
+by probing DNS, not the Resend API.
 
-Domain purchased 2026-08-15: **pattersonspickem.com** (note the extra `s` vs the
-`pattersonpickem` Render subdomain), DNS hosted at Squarespace Domains. The Resend API
-key is send-only restricted, so domain status can't be checked via the Resend API —
-probe DNS instead (`resend._domainkey.pattersonspickem.com` TXT + `send.` MX/TXT).
+Remaining human steps:
 
-Remaining steps:
-
-1. [user] Resend dashboard → Domains → Add Domain → `pattersonspickem.com`, then copy
-   the records it shows into Squarespace (Domains → pattersonspickem.com → DNS →
-   custom records) and wait for Resend to show Verified (usually minutes). Same API
-   key keeps working.
-2. [claude] Flip `admin_email` in `[auth.email.smtp]` to
-   `noreply@pattersonspickem.com` and `supabase config push` (needs
-   `SUPABASE_ACCESS_TOKEN` + `RESEND_API_KEY` env vars; creds in session memory —
-   never in the repo).
-3. [user+claude] Re-test a reset (delivery from the new domain to gmail exercises the
-   new SPF/DKIM), ideally also to a non-owner mailbox, check spam.
-4. [user] Only then: announce to legacy members that "Forgot password?" sets their
-   password.
+1. [user] Confirm the test reset landed in the inbox (not spam) from
+   "Patterson Pick'em <noreply@pattersonspickem.com>".
+2. [user] Have one pool member run "Forgot password?" as a real-world non-owner check.
+3. [user] Announce to legacy members that "Forgot password?" sets their password.
 
 ## P1 — Egress work (before the first big Saturday)
 
