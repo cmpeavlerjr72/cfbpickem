@@ -34,6 +34,12 @@ export interface WeekData {
   week: number;
   seasonType: number;
   label: string;
+  /**
+   * Week number to use against ESPN's API when it differs from `week` —
+   * our "Week 0" is carved out of ESPN's merged week 1 (see
+   * data/split-week-zero.mjs), and ESPN has no week 0.
+   */
+  espnWeek?: number;
   games: Game[];
 }
 

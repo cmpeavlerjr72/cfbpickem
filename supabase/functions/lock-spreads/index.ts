@@ -55,13 +55,16 @@ Deno.serve(async () => {
       const kicks = (rows ?? []).map((r) => r.kickoff as string).sort();
       if (kicks.length === 0 || Date.now() < spreadLockTime(kicks[0])) continue;
 
-      const weekKey = `${slate.season}:${slate.season_type}:${slate.week}`;
+      // App week 0 is carved out of ESPN's merged week 1 (ESPN has no week
+      // 0) — see data/split-week-zero.mjs and WeekData.espnWeek.
+      const espnWeek = slate.week === 0 ? 1 : slate.week;
+      const weekKey = `${slate.season}:${slate.season_type}:${espnWeek}`;
       let lines = espnCache.get(weekKey);
       if (!lines) {
         lines = {};
         const url =
           `https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard` +
-          `?dates=${slate.season}&seasontype=${slate.season_type}&week=${slate.week}&groups=80&limit=400`;
+          `?dates=${slate.season}&seasontype=${slate.season_type}&week=${espnWeek}&groups=80&limit=400`;
         const res = await fetch(url, {
           headers: { 'user-agent': 'Mozilla/5.0', 'cache-control': 'no-cache' },
         });

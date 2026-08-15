@@ -124,6 +124,16 @@ Shared concepts to keep in sync manually (no shared package yet):
 
 - Fetch/refresh the season schedule: `node data/fetch-games.mjs 2026`
   (pulls every FBS game from ESPN's public scoreboard API into `data/games-2026.json`)
+- **Week 0 split (2026-08-15):** ESPN merges the late-August "Week 0" weekend into its
+  week 1. `data/split-week-zero.mjs` (applied automatically by fetch-games, runnable
+  standalone on an existing data file) carves those games out into a real Week 0 —
+  required because picks lock at a week's FIRST kickoff, and merged weeks would lock
+  Labor Day picks in August. Split weeks carry `espnWeek` (both halves = 1), which is
+  what `results.ts` and the `lock-spreads` Edge Function must use for ESPN API calls —
+  ESPN has no week 0. Week 0 is the pool's designated TEST week.
+- `generate-games-migration.mjs` always writes a NEW timestamped migration (never
+  overwrites — pushed migrations are version-recorded and edits would silently not
+  re-apply).
 - Sync data into both apps: `node data/sync-to-apps.mjs 2026`
   (writes minified copies to `web/src/data/games.json` and `mobile/assets/games.json`)
 - After refetching data, always re-run the sync so both apps see the same data.

@@ -112,7 +112,7 @@ export async function fetchWeekScoreboard(
   weekData: WeekData,
 ): Promise<WeekResults> {
   try {
-    const url = `${SCOREBOARD}?dates=${season}&seasontype=${weekData.seasonType}&week=${weekData.week}&groups=80&limit=400`;
+    const url = `${SCOREBOARD}?dates=${season}&seasontype=${weekData.seasonType}&week=${weekData.espnWeek ?? weekData.week}&groups=80&limit=400`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return parseScoreboard(await res.json());
@@ -155,7 +155,7 @@ export async function getWeekResults(season: number, weekData: WeekData): Promis
   }
   if (cached?.allFinal) return cached.results;
   try {
-    const url = `${SCOREBOARD}?dates=${season}&seasontype=${weekData.seasonType}&week=${weekData.week}&groups=80&limit=400`;
+    const url = `${SCOREBOARD}?dates=${season}&seasontype=${weekData.seasonType}&week=${weekData.espnWeek ?? weekData.week}&groups=80&limit=400`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const results = parseScoreboard(await res.json());

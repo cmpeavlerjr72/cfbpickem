@@ -6,6 +6,7 @@
 import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { splitWeekZero } from './split-week-zero.mjs';
 
 const YEAR = process.argv[2] ? Number(process.argv[2]) : 2026;
 const BASE = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard';
@@ -108,19 +109,22 @@ async function main() {
     console.log(`Postseason not available yet (${err.message})`);
   }
 
-  const totalGames = weeks.reduce((n, w) => n + w.games.length, 0);
+  // ESPN merges "Week 0" into week 1 — separate them (see split-week-zero.mjs).
+  const splitWeeks = splitWeekZero(weeks);
+
+  const totalGames = splitWeeks.reduce((n, w) => n + w.games.length, 0);
   const out = {
     sport: 'college-football',
     season: YEAR,
     fetchedAt: new Date().toISOString(),
     source: 'ESPN site API (site.api.espn.com)',
     totalGames,
-    weeks,
+    weeks: splitWeeks,
   };
 
   const outPath = join(OUT_DIR, `games-${YEAR}.json`);
   writeFileSync(outPath, JSON.stringify(out, null, 2));
-  console.log(`\nWrote ${totalGames} games across ${weeks.length} weeks to ${outPath}`);
+  console.log(`\nWrote ${totalGames} games across ${splitWeeks.length} weeks to ${outPath}`);
 }
 
 main().catch((err) => {

@@ -6,10 +6,12 @@
 //   node data/sync-to-apps.mjs 2026
 //   node data/generate-games-migration.mjs 2026
 //
-// Each run overwrites the same migration file for the year if it hasn't
-// been pushed yet; if it has, it writes a new timestamped file.
+// Each run writes a NEW timestamped migration (upserts are idempotent, so
+// stacking refreshes is fine) — never overwrite an existing file: pushed
+// migrations are recorded by version and an edited one would silently not
+// re-apply.
 
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -51,9 +53,7 @@ on conflict (id) do update set
 `;
 
 const migrationsDir = join(root, 'supabase', 'migrations');
-const marker = `_games_${year}.sql`;
-const existing = readdirSync(migrationsDir).find((f) => f.endsWith(marker));
 const stamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14);
-const file = join(migrationsDir, existing ?? `${stamp}${marker}`);
+const file = join(migrationsDir, `${stamp}_games_${year}.sql`);
 writeFileSync(file, sql);
 console.log(`Wrote ${rows.length} games to ${file}`);

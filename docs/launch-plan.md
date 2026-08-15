@@ -96,9 +96,11 @@ already skip polling.)
 ## Pre-launch checks (week of Aug 24)
 
 - [ ] **Mon Aug 24**: first real automatic spread lock (hourly pg_cron →
-  `lock-spreads`). Its server-side ESPN fetch has never run against a live week —
-  Akamai may block it. Verify `slates.spreads_locked_at` got stamped / check function
-  logs. Fallback exists: the commissioner's browser lazily locks on next visit.
+  `lock-spreads`) — for **Week 0, the designated test week** (split from ESPN's merged
+  week 1 on 2026-08-15; Week 1 proper starts Thu Sep 3, spreads lock Mon Aug 31). The
+  server-side ESPN fetch has never run against a live week — Akamai may block it.
+  Verify `slates.spreads_locked_at` got stamped / check function logs. Fallback
+  exists: the commissioner's browser lazily locks on next visit.
 - [ ] Auth flows with a fresh email: sign up → sign out → sign in → password reset
   (after P0 lands).
 - [ ] Commissioner override walkthrough: "Entering picks for…" another member, before
