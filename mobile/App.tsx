@@ -1,9 +1,9 @@
-// Mirrors web/src/App.tsx + Root.tsx (see CLAUDE.md parity rule). Mobile is
+// Mirrors web/src/App.tsx + Root.tsx (see CLAUDE.md parity rule): AuthGate →
+// league switcher (dashboard when no league selected, remembered per device)
+// → the pool app, including the commissioner's Slate tab. Mobile is
 // Supabase-only (client config is baked in, so there's no local fallback
-// mode), and the commissioner's Slate builder stays web-only — building a
-// slate is desk work; the pool's slates sync down here automatically. The
-// lazy Monday spread-lock path is also web-only (the hourly Edge Function
-// cron covers it server-side).
+// mode). The lazy Monday spread-lock path is web-only (the hourly Edge
+// Function cron covers it server-side).
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
@@ -16,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import gamesJson from './assets/games.json';
 import type { Game, SeasonData, WeekData } from './types';
 import { fetchWeekScoreboard, isGameLocked } from './results';
@@ -23,14 +24,18 @@ import { useWeekResults } from './live';
 import type { CoverOdds, PickSide, PoolEntry, PoolProfile, PoolSettings, WeekSlate } from './pool/types';
 import { DEFAULT_SETTINGS } from './pool/types';
 import type { PoolStore } from './pool/store';
+import { SupabasePoolStore } from './pool/store';
 import { fetchCoverOddsForSlate } from './pool/kalshi';
-import { AuthGate } from './components/AuthGate';
+import { AuthGate, type AccountContext } from './components/AuthGate';
+import { Dashboard } from './components/Dashboard';
 import { PickSheet } from './components/PickSheet';
 import { ScoreboardTab } from './components/ScoreboardTab';
+import { SlateBuilder } from './components/SlateBuilder';
 import { StandingsTab } from './components/StandingsTab';
 import { colors } from './theme';
 
 const season = gamesJson as SeasonData;
+const LAST_POOL_KEY = 'cfb-pickem:pool:last';
 
 // Default to the first week that hasn't fully finished yet.
 function defaultWeekIndex(weeks: WeekData[]): number {
@@ -41,24 +46,80 @@ function defaultWeekIndex(weeks: WeekData[]): number {
   return idx === -1 ? 0 : idx;
 }
 
-type Tab = 'picks' | 'board' | 'standings';
+type Tab = 'picks' | 'board' | 'standings' | 'slate';
 
 export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <AuthGate>
-        {(ctx) => (
-          <PoolApp
-            store={ctx.store}
-            profile={ctx.profile}
-            poolName={ctx.poolName}
-            inviteCode={ctx.inviteCode}
-            onSignOut={ctx.signOut}
-          />
-        )}
-      </AuthGate>
+      <AuthGate>{(account) => <LeagueSwitcher account={account} />}</AuthGate>
     </SafeAreaProvider>
+  );
+}
+
+function LeagueSwitcher({ account }: { account: AccountContext }) {
+  const [state, setState] = useState<{ loaded: boolean; poolId: string | null }>({
+    loaded: false,
+    poolId: null,
+  });
+
+  // Restore the remembered league once; a single league auto-enters.
+  useEffect(() => {
+    AsyncStorage.getItem(LAST_POOL_KEY)
+      .catch(() => null)
+      .then((remembered) => {
+        setState((prev) => {
+          if (prev.loaded) return prev;
+          const valid =
+            remembered && account.memberships.some((m) => m.poolId === remembered)
+              ? remembered
+              : account.memberships.length === 1
+                ? account.memberships[0].poolId
+                : null;
+          return { loaded: true, poolId: valid };
+        });
+      });
+  }, [account]);
+
+  const select = (id: string | null) => {
+    setState({ loaded: true, poolId: id });
+    if (id) AsyncStorage.setItem(LAST_POOL_KEY, id).catch(() => {});
+    else AsyncStorage.removeItem(LAST_POOL_KEY).catch(() => {});
+  };
+
+  const membership = account.memberships.find((m) => m.poolId === state.poolId) ?? null;
+
+  const profile = useMemo<PoolProfile | null>(
+    () =>
+      membership
+        ? {
+            playerId: account.userId,
+            playerName: account.displayName,
+            isCommissioner: membership.isCommissioner,
+          }
+        : null,
+    [membership, account.userId, account.displayName],
+  );
+
+  const store = useMemo(
+    () => (membership && profile ? new SupabasePoolStore(membership.poolId, profile) : null),
+    [membership, profile],
+  );
+
+  if (!state.loaded) return null;
+  if (!membership || !profile || !store) {
+    return <Dashboard account={account} onSelect={select} />;
+  }
+
+  return (
+    <PoolApp
+      key={membership.poolId}
+      store={store}
+      profile={profile}
+      poolName={membership.poolName}
+      inviteCode={membership.inviteCode}
+      onSwitchLeague={() => select(null)}
+    />
   );
 }
 
@@ -67,10 +128,10 @@ interface PoolAppProps {
   profile: PoolProfile;
   poolName: string;
   inviteCode?: string;
-  onSignOut: () => void;
+  onSwitchLeague: () => void;
 }
 
-function PoolApp({ store, profile, poolName, inviteCode, onSignOut }: PoolAppProps) {
+function PoolApp({ store, profile, poolName, inviteCode, onSwitchLeague }: PoolAppProps) {
   const [settings, setSettings] = useState<PoolSettings>({ ...DEFAULT_SETTINGS, name: poolName });
   const [tab, setTab] = useState<Tab>('picks');
   const [weekIndex, setWeekIndex] = useState(() => defaultWeekIndex(season.weeks));
@@ -255,6 +316,28 @@ function PoolApp({ store, profile, poolName, inviteCode, onSignOut }: PoolAppPro
     }));
   };
 
+  const handleSlateSave = (s: WeekSlate) => {
+    setSlate(s);
+    store.saveSlate(s).catch((err) => {
+      Alert.alert(
+        'Slate not saved',
+        `Couldn’t save the slate: ${err instanceof Error ? err.message : 'unknown error'}`,
+      );
+      refresh();
+    });
+  };
+
+  const handleSettingsSave = (s: PoolSettings) => {
+    setSettings(s);
+    store.saveSettings(s).catch((err) => {
+      Alert.alert(
+        'Settings not saved',
+        `Couldn’t save settings: ${err instanceof Error ? err.message : 'unknown error'}`,
+      );
+      store.getSettings().then(setSettings);
+    });
+  };
+
   const slateGameIds = slate?.published ? slate.games.map((g) => g.gameId) : [];
   const pickedCount = slateGameIds.filter((id) => activeEntry.picks[id]).length;
   const allPicked = slateGameIds.length > 0 && pickedCount === slateGameIds.length;
@@ -269,8 +352,8 @@ function PoolApp({ store, profile, poolName, inviteCode, onSignOut }: PoolAppPro
           <Text style={styles.title} numberOfLines={1}>
             {settings.name}
           </Text>
-          <Pressable onPress={onSignOut}>
-            <Text style={styles.signOut}>Sign out</Text>
+          <Pressable onPress={onSwitchLeague}>
+            <Text style={styles.signOut}>Leagues</Text>
           </Pressable>
         </View>
         <Text style={styles.headerSub}>
@@ -377,6 +460,19 @@ function PoolApp({ store, profile, poolName, inviteCode, onSignOut }: PoolAppPro
             />
           </ScrollView>
         )}
+        {tab === 'slate' && profile.isCommissioner && (
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <SlateBuilder
+              week={week}
+              slate={slate}
+              settings={settings}
+              season={season.season}
+              inviteCode={inviteCode}
+              onSave={handleSlateSave}
+              onSaveSettings={handleSettingsSave}
+            />
+          </ScrollView>
+        )}
       </View>
 
       {showPickBar && (
@@ -428,6 +524,11 @@ function PoolApp({ store, profile, poolName, inviteCode, onSignOut }: PoolAppPro
             Standings
           </Text>
         </Pressable>
+        {profile.isCommissioner && (
+          <Pressable style={styles.tabBtn} onPress={() => setTab('slate')}>
+            <Text style={[styles.tabText, tab === 'slate' && styles.tabTextActive]}>Slate</Text>
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );

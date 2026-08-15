@@ -1,31 +1,78 @@
-// Entry composition: Supabase mode goes through AuthGate (email/password +
-// pool membership); without env credentials we fall back to the original
-// single-browser local store so the app still runs offline.
+// Entry composition: Supabase mode goes through AuthGate (email/password),
+// then the league switcher — dashboard when no league is selected, the pool
+// app once one is. The device remembers your last league. Without env
+// credentials we fall back to the original single-browser local store so
+// the app still runs offline.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import App from './App';
-import { AuthGate } from './components/AuthGate';
+import { AuthGate, type AccountContext } from './components/AuthGate';
+import { Dashboard } from './components/Dashboard';
 import { PoolSetup } from './components/PoolSetup';
-import { localPoolStore } from './pool/store';
+import { localPoolStore, SupabasePoolStore } from './pool/store';
 import { supabaseEnabled } from './pool/supabase';
 import type { PoolProfile } from './pool/types';
 
+const LAST_POOL_KEY = 'cfb-pickem:pool:last';
+
 export default function Root() {
   if (supabaseEnabled) {
-    return (
-      <AuthGate>
-        {(ctx) => (
-          <App
-            store={ctx.store}
-            profile={ctx.profile}
-            inviteCode={ctx.inviteCode}
-            onSignOut={ctx.signOut}
-          />
-        )}
-      </AuthGate>
-    );
+    return <AuthGate>{(account) => <LeagueSwitcher account={account} />}</AuthGate>;
   }
   return <LocalGate />;
+}
+
+function LeagueSwitcher({ account }: { account: AccountContext }) {
+  const [poolId, setPoolId] = useState<string | null>(() => {
+    const remembered = localStorage.getItem(LAST_POOL_KEY);
+    if (remembered && account.memberships.some((m) => m.poolId === remembered)) return remembered;
+    return account.memberships.length === 1 ? account.memberships[0].poolId : null;
+  });
+
+  const select = (id: string | null) => {
+    setPoolId(id);
+    try {
+      if (id) localStorage.setItem(LAST_POOL_KEY, id);
+      else localStorage.removeItem(LAST_POOL_KEY);
+    } catch {
+      // storage unavailable — selection just won't persist
+    }
+  };
+
+  const membership = account.memberships.find((m) => m.poolId === poolId) ?? null;
+
+  const profile = useMemo<PoolProfile | null>(
+    () =>
+      membership
+        ? {
+            playerId: account.userId,
+            playerName: account.displayName,
+            isCommissioner: membership.isCommissioner,
+          }
+        : null,
+    [membership, account.userId, account.displayName],
+  );
+
+  const store = useMemo(
+    () => (membership && profile ? new SupabasePoolStore(membership.poolId, profile) : null),
+    [membership, profile],
+  );
+
+  if (!membership || !profile || !store) {
+    return <Dashboard account={account} onSelect={select} />;
+  }
+
+  return (
+    <App
+      key={membership.poolId}
+      store={store}
+      profile={profile}
+      inviteCode={membership.inviteCode}
+      poolName={membership.poolName}
+      onSignOut={account.signOut}
+      onSwitchLeague={() => select(null)}
+    />
+  );
 }
 
 function LocalGate() {

@@ -23,9 +23,9 @@ A college football pick'em game with two clients: a website and a mobile app. St
 native module requires a new EAS build + Play submission). The in-review iOS build must
 stay untouched — **never publish an update without `--platform android`** until Apple
 approves; then one `--platform ios` update catches iOS up. Deliberate platform
-exceptions: SlateBuilder + pool settings UI are web-only (commissioner desk work);
-mobile has no LocalPoolStore fallback (Supabase config is baked in); password-reset
-links open the website.
+exceptions: mobile has no LocalPoolStore fallback (Supabase config is baked in) and
+password-reset links open the website. Everything else — including the commissioner
+SlateBuilder and the league dashboard — exists on both platforms.
 
 ## Pool model (web, funofficepools.com-style)
 
@@ -52,10 +52,18 @@ links open the website.
   selector on the Picks tab; the trigger bypasses locks only when a commissioner writes
   someone else's entry — their own sheet locks like everyone's. The commish also sees all
   picks pre-lock.
+- **Multi-league accounts (added 2026-08-15):** one account can belong to any number
+  of pools. After sign-in, `AuthGate` resolves the account + ALL memberships; the
+  league **Dashboard** (`Dashboard.tsx` on both platforms) lists leagues (tap to
+  enter), joins by invite code, creates leagues, and holds account settings (display
+  name, change password, sign out). The device remembers the last league
+  (`cfb-pickem:pool:last`, localStorage/AsyncStorage); a lone league auto-enters; the
+  header "Leagues" button returns to the dashboard. League switching remounts the app
+  (`key={poolId}`).
 - Code: `web/src/pool/` — `types.ts` (model), `store.ts` (**PoolStore interface = the
   Supabase seam**; LocalPoolStore/localStorage for now), `scoring.ts` (pure ATS
-  grading/leaderboards), `kalshi.ts` (cover odds). UI: `PoolSetup`, `SlateBuilder`,
-  `PickSheet`, `AtsGameCard`, `ScoreboardTab`, `StandingsTab`.
+  grading/leaderboards), `kalshi.ts` (cover odds). UI: `PoolSetup`, `Dashboard`,
+  `SlateBuilder`, `PickSheet`, `AtsGameCard`, `ScoreboardTab`, `StandingsTab`.
 - Spreads are stored home-POV (negative = home favored). Grading: home covers iff
   `homeScore + homeSpread > awayScore`.
 - **Kalshi cover odds** (public API, no auth): series `KXNCAAFSPREAD`, one event per game

@@ -31,11 +31,23 @@ interface AppProps {
   store: PoolStore;
   profile: PoolProfile;
   inviteCode?: string;
+  poolName?: string;
   onSignOut?: () => void;
+  /** Back to the league dashboard (multi-league accounts). */
+  onSwitchLeague?: () => void;
 }
 
-export default function App({ store, profile, inviteCode, onSignOut }: AppProps) {
-  const [settings, setSettings] = useState<PoolSettings>(DEFAULT_SETTINGS);
+export default function App({
+  store,
+  profile,
+  inviteCode,
+  poolName,
+  onSignOut,
+  onSwitchLeague,
+}: AppProps) {
+  const [settings, setSettings] = useState<PoolSettings>(() =>
+    poolName ? { ...DEFAULT_SETTINGS, name: poolName } : DEFAULT_SETTINGS,
+  );
   const [tab, setTab] = useState<Tab>('picks');
   const [weekIndex, setWeekIndex] = useState(() => defaultWeekIndex(season.weeks));
   const week = season.weeks[weekIndex];
@@ -295,6 +307,11 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
             <span className="app-season">{season.season} Season</span>
             <span className="app-user">
               {profile.playerName}
+              {onSwitchLeague && (
+                <button type="button" className="signout-btn" onClick={onSwitchLeague}>
+                  Leagues
+                </button>
+              )}
               {onSignOut && (
                 <button type="button" className="signout-btn" onClick={onSignOut}>
                   Sign out

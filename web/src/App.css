@@ -1274,3 +1274,130 @@ section:first-child .day-header {
   font-weight: 600;
   color: var(--amber);
 }
+
+/* ---------- League dashboard ---------- */
+
+.dash-screen {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 32px 16px 64px;
+}
+
+.dash-inner {
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dash-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.dash-logo {
+  font-size: 34px;
+}
+
+.dash-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.dash-sub {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 2px 0 0;
+}
+
+.dash-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.dash-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0 0 10px;
+}
+
+.dash-leagues {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dash-league {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.dash-league:hover {
+  border-color: var(--navy-light);
+}
+
+.dash-league-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  flex: 1;
+}
+
+.dash-league-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.dash-league-go {
+  font-size: 18px;
+  color: var(--text-dim);
+}
+
+.dash-empty {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.dash-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.dash-row + .dash-row {
+  margin-top: 10px;
+}
+
+.dash-input {
+  flex: 1;
+  margin-top: 0;
+}
+
+.dash-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 8px 0 10px;
+}
+
+.dash-notice {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  margin: 0;
+}

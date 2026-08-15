@@ -58,6 +58,14 @@ export interface PoolProfile {
   isCommissioner: boolean;
 }
 
+/** One league the signed-in player belongs to (dashboard row). */
+export interface PoolMembership {
+  poolId: string;
+  poolName: string;
+  inviteCode: string;
+  isCommissioner: boolean;
+}
+
 export interface PoolSettings {
   name: string;
   /** Target games per weekly slate — a guide for the commissioner, not a hard cap. */

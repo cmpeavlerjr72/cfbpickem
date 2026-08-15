@@ -1,8 +1,9 @@
-// Sign-in and pool-membership gate — mirrors web/src/components/AuthGate.tsx
-// (see CLAUDE.md parity rule): email + password → display name (first visit)
-// → create or join a pool. One mobile-specific difference: password-reset
-// links open the WEBSITE (there's no deep link into the app), so the flow is
-// "reset there, then sign in here".
+// Sign-in gate — mirrors web/src/components/AuthGate.tsx (see CLAUDE.md
+// parity rule): email + password → display name (first visit) → the account
+// context with EVERY league the player belongs to. League selection,
+// joining, and creating live on the Dashboard. Mobile-specific difference:
+// password-reset links open the WEBSITE (no deep link into the app), so the
+// flow is "reset there, then sign in here".
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
@@ -15,26 +16,32 @@ import {
 } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../pool/supabase';
-import { SupabasePoolStore } from '../pool/store';
-import type { PoolProfile } from '../pool/types';
+import type { PoolMembership } from '../pool/types';
 import { colors } from '../theme';
 
 const SITE_URL = 'https://pattersonpickem.onrender.com';
 
-export interface PoolContext {
-  store: SupabasePoolStore;
-  profile: PoolProfile;
-  poolName: string;
-  inviteCode: string;
+export interface AccountContext {
+  userId: string;
+  displayName: string;
+  memberships: PoolMembership[];
+  /** Re-fetch profile + memberships (after a name change, join, or create). */
+  refresh: () => Promise<void>;
   signOut: () => void;
 }
 
-type Phase = 'loading' | 'signedOut' | 'resetSent' | 'confirmSent' | 'needName' | 'needPool' | 'ready';
+type Phase = 'loading' | 'signedOut' | 'resetSent' | 'confirmSent' | 'needName' | 'ready';
 
-export function AuthGate({ children }: { children: (ctx: PoolContext) => ReactNode }) {
+interface MembershipRow {
+  pool_id: string;
+  is_commissioner: boolean;
+  pools: { name: string; invite_code: string } | null;
+}
+
+export function AuthGate({ children }: { children: (ctx: AccountContext) => ReactNode }) {
   const [phase, setPhase] = useState<Phase>('loading');
   const [session, setSession] = useState<Session | null>(null);
-  const [ctx, setCtx] = useState<PoolContext | null>(null);
+  const [ctx, setCtx] = useState<AccountContext | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -44,7 +51,7 @@ export function AuthGate({ children }: { children: (ctx: PoolContext) => ReactNo
     setPhase('signedOut');
   }, []);
 
-  const resolveMember = useCallback(
+  const resolveAccount = useCallback(
     async (s: Session) => {
       const userId = s.user.id;
       const { data: prof } = await supabase
@@ -56,27 +63,23 @@ export function AuthGate({ children }: { children: (ctx: PoolContext) => ReactNo
         setPhase('needName');
         return;
       }
-      const { data: member } = await supabase
+      const { data: rows } = await supabase
         .from('pool_members')
         .select('pool_id, is_commissioner, pools(name, invite_code)')
-        .eq('player_id', userId)
-        .limit(1)
-        .maybeSingle();
-      if (!member) {
-        setPhase('needPool');
-        return;
-      }
-      const pool = member.pools as unknown as { name: string; invite_code: string } | null;
-      const profile: PoolProfile = {
-        playerId: userId,
-        playerName: prof.display_name,
-        isCommissioner: member.is_commissioner,
-      };
+        .eq('player_id', userId);
+      const memberships: PoolMembership[] = ((rows ?? []) as unknown as MembershipRow[])
+        .map((row) => ({
+          poolId: row.pool_id,
+          poolName: row.pools?.name ?? 'Pool',
+          inviteCode: row.pools?.invite_code ?? '',
+          isCommissioner: row.is_commissioner,
+        }))
+        .sort((a, b) => a.poolName.localeCompare(b.poolName));
       setCtx({
-        store: new SupabasePoolStore(member.pool_id, profile),
-        profile,
-        poolName: pool?.name ?? 'Pool',
-        inviteCode: pool?.invite_code ?? '',
+        userId,
+        displayName: prof.display_name,
+        memberships,
+        refresh: async () => resolveAccount(s),
         signOut,
       });
       setPhase('ready');
@@ -87,16 +90,16 @@ export function AuthGate({ children }: { children: (ctx: PoolContext) => ReactNo
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      if (data.session) resolveMember(data.session);
+      if (data.session) resolveAccount(data.session);
       else setPhase('signedOut');
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
-      if (event === 'SIGNED_IN' && s) resolveMember(s);
+      if (event === 'SIGNED_IN' && s) resolveAccount(s);
       if (event === 'SIGNED_OUT') setPhase('signedOut');
     });
     return () => sub.subscription.unsubscribe();
-  }, [resolveMember]);
+  }, [resolveAccount]);
 
   if (phase === 'ready' && ctx) return <>{children(ctx)}</>;
   if (phase === 'loading') {
@@ -190,31 +193,8 @@ export function AuthGate({ children }: { children: (ctx: PoolContext) => ReactNo
                 .upsert({ id: session.user.id, display_name: name });
               setBusy(false);
               if (err) setError(err.message);
-              else resolveMember(session);
+              else resolveAccount(session);
             }}
-          />
-        )}
-        {phase === 'needPool' && session && (
-          <PoolForm
-            busy={busy}
-            error={error}
-            onCreate={async (name) => {
-              setBusy(true);
-              setError(null);
-              const { error: err } = await supabase.rpc('create_pool', { p_name: name });
-              setBusy(false);
-              if (err) setError(err.message);
-              else resolveMember(session);
-            }}
-            onJoin={async (code) => {
-              setBusy(true);
-              setError(null);
-              const { error: err } = await supabase.rpc('join_pool', { p_code: code });
-              setBusy(false);
-              if (err) setError(err.message.includes('invalid') ? 'Invalid invite code.' : err.message);
-              else resolveMember(session);
-            }}
-            onSignOut={signOut}
           />
         )}
       </View>
@@ -348,92 +328,6 @@ function NameForm({
   );
 }
 
-function PoolForm({
-  busy,
-  error,
-  onCreate,
-  onJoin,
-  onSignOut,
-}: {
-  busy: boolean;
-  error: string | null;
-  onCreate: (name: string) => void;
-  onJoin: (code: string) => void;
-  onSignOut: () => void;
-}) {
-  const [mode, setMode] = useState<'join' | 'create'>('join');
-  const [code, setCode] = useState('');
-  const [name, setName] = useState('');
-  return (
-    <>
-      <Text style={styles.title}>Join your pool</Text>
-      <View style={styles.toggle}>
-        <Pressable
-          style={[styles.toggleBtn, mode === 'join' && styles.toggleBtnActive]}
-          onPress={() => setMode('join')}
-        >
-          <Text style={[styles.toggleText, mode === 'join' && styles.toggleTextActive]}>
-            I have an invite code
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.toggleBtn, mode === 'create' && styles.toggleBtnActive]}
-          onPress={() => setMode('create')}
-        >
-          <Text style={[styles.toggleText, mode === 'create' && styles.toggleTextActive]}>
-            Start a new pool
-          </Text>
-        </Pressable>
-      </View>
-      {mode === 'join' ? (
-        <>
-          <TextInput
-            style={[styles.input, styles.inviteInput]}
-            placeholder="ABC123"
-            placeholderTextColor={colors.textDim}
-            value={code}
-            maxLength={6}
-            autoCapitalize="characters"
-            onChangeText={(t) => setCode(t.toUpperCase())}
-            onSubmitEditing={() => code.trim() && onJoin(code.trim())}
-          />
-          {error && <Text style={styles.error}>{error}</Text>}
-          <Pressable
-            style={[styles.submitBtn, (code.trim().length < 6 || busy) && styles.submitBtnDisabled]}
-            disabled={code.trim().length < 6 || busy}
-            onPress={() => onJoin(code.trim())}
-          >
-            <Text style={styles.submitBtnText}>Join pool</Text>
-          </Pressable>
-        </>
-      ) : (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Pool name"
-            placeholderTextColor={colors.textDim}
-            value={name}
-            maxLength={60}
-            onChangeText={setName}
-            onSubmitEditing={() => onCreate(name.trim())}
-          />
-          {error && <Text style={styles.error}>{error}</Text>}
-          <Pressable
-            style={[styles.submitBtn, busy && styles.submitBtnDisabled]}
-            disabled={busy}
-            onPress={() => onCreate(name.trim())}
-          >
-            <Text style={styles.submitBtnText}>Create pool (you’ll be commissioner)</Text>
-          </Pressable>
-        </>
-      )}
-      <Pressable style={styles.linkBtn} onPress={onSignOut}>
-        <Text style={styles.linkBtnText}>Sign out</Text>
-      </Pressable>
-    </>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -505,11 +399,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 10,
     color: colors.text,
-  },
-  inviteInput: {
-    textAlign: 'center',
-    letterSpacing: 4,
-    fontWeight: '800',
   },
   error: {
     marginTop: 10,
