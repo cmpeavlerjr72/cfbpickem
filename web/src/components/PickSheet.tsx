@@ -1,5 +1,7 @@
 // The player's weekly sheet: ATS pick on each slate game plus the GameDay
-// tiebreaker score guess. Picks save as you go and lock per-game at kickoff.
+// tiebreaker score guess. Picks save as you go; the WHOLE sheet locks at the
+// week's first kickoff (no late-addition picks). `overriding` = commissioner
+// editing another member's sheet, which ignores the lock.
 
 import { useMemo } from 'react';
 import type { Game, WeekData } from '../types';
@@ -16,6 +18,9 @@ interface PickSheetProps {
   entry: PoolEntry;
   results: WeekResults;
   coverOdds?: Record<string, CoverOdds>;
+  picksLockAt: Date | null;
+  picksLocked: boolean;
+  overriding: boolean;
   onPick: (gameId: string, side: PickSide) => void;
   onTiebreaker: (home: number | null, away: number | null) => void;
 }
@@ -26,6 +31,9 @@ export function PickSheet({
   entry,
   results,
   coverOdds,
+  picksLockAt,
+  picksLocked,
+  overriding,
   onPick,
   onTiebreaker,
 }: PickSheetProps) {
@@ -66,7 +74,9 @@ export function PickSheet({
     else dayGroups.push({ day, items: [item] });
   }
 
-  const tbLocked = tbEntry ? isGameLocked(tbEntry.game, results[tbEntry.game.id]) : true;
+  const tbLocked = overriding
+    ? false
+    : picksLocked || (tbEntry ? isGameLocked(tbEntry.game, results[tbEntry.game.id]) : true);
 
   const linesFloating =
     slate.pickType !== 'su' && !slate.spreadsLockedAt && slateGames.length > 0
@@ -82,8 +92,25 @@ export function PickSheet({
       })
     : '';
 
+  const deadlineLabel = picksLockAt?.toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
   return (
     <>
+      {picksLocked && !overriding ? (
+        <div className="lines-note">
+          Picks are locked for {week.label} — the first game has kicked off.
+        </div>
+      ) : !picksLocked && deadlineLabel ? (
+        <div className="deadline-note">
+          All picks (and the tiebreaker) lock at the week’s first kickoff: {deadlineLabel}.
+        </div>
+      ) : null}
       {linesFloating && (
         <div className="lines-note">
           Spreads shown are live market numbers — they lock for good on {lockLabel}.
@@ -100,7 +127,7 @@ export function PickSheet({
                 slateGame={sg}
                 pickType={slate.pickType ?? 'ats'}
                 result={results[game.id]}
-                locked={isGameLocked(game, results[game.id])}
+                locked={overriding ? false : picksLocked || isGameLocked(game, results[game.id])}
                 pickedSide={entry.picks[game.id] ?? null}
                 coverOdds={coverOdds?.[game.id] ?? null}
                 onPick={onPick}
@@ -157,7 +184,7 @@ export function PickSheet({
                 />
               </label>
             </div>
-            {tbLocked && <p className="tb-locked-note">Tiebreaker locked at kickoff.</p>}
+            {tbLocked && <p className="tb-locked-note">Tiebreaker locked with the rest of the slate.</p>}
           </div>
         </section>
       )}

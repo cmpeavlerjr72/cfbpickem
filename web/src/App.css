@@ -1211,3 +1211,66 @@ section:first-child .day-header {
   color: var(--text-dim);
   font-size: 12px;
 }
+
+/* Quieter cousin of .lines-note: the pick-deadline reminder. */
+.deadline-note {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.auth-forgot {
+  margin-top: 14px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  text-decoration: underline;
+}
+
+.auth-forgot:disabled {
+  opacity: 0.6;
+  text-decoration: none;
+}
+
+/* Commissioner "enter picks for…" override bar on the Picks tab. */
+.commish-bar {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.commish-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.commish-label select {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.commish-note {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--amber);
+}

@@ -1,11 +1,11 @@
 // Live scoreboard for the week's slate: game state (clock, possession,
 // last play) plus where every player stands, ordered live → upcoming → final.
-// Picks stay hidden until a game locks so nobody can copy sheets.
+// Picks stay hidden until the slate locks at the week's first kickoff (the
+// server hides them too); after that everyone's whole sheet is visible.
 
 import { useMemo } from 'react';
 import type { Game, WeekData } from '../types';
 import type { GameResult, WeekResults } from '../results';
-import { isGameLocked } from '../results';
 import type { CoverOdds, PoolEntry, SlateGame, WeekSlate } from '../pool/types';
 import { coverMargin, gradeAts } from '../pool/scoring';
 import { AtsGameCard } from './AtsGameCard';
@@ -22,6 +22,7 @@ interface ScoreboardTabProps {
   entries: PoolEntry[];
   results: WeekResults;
   coverOdds: Record<string, CoverOdds>;
+  picksLocked: boolean;
   currentPlayerId: string;
 }
 
@@ -31,6 +32,7 @@ export function ScoreboardTab({
   entries,
   results,
   coverOdds,
+  picksLocked,
   currentPlayerId,
 }: ScoreboardTabProps) {
   const gamesById = useMemo(() => {
@@ -63,7 +65,6 @@ export function ScoreboardTab({
     <div className="scoreboard">
       {items.map(({ sg, game }) => {
         const result = results[game.id];
-        const locked = isGameLocked(game, result);
         const live = result?.state === 'in';
         return (
           <div key={game.id} className="scoreboard-item">
@@ -82,7 +83,7 @@ export function ScoreboardTab({
               slateGame={sg}
               result={result}
               entries={entries}
-              revealed={locked}
+              revealed={picksLocked}
               currentPlayerId={currentPlayerId}
             />
           </div>
@@ -128,7 +129,8 @@ function PickChips({ game, slateGame, result, entries, revealed, currentPlayerId
     return (
       <div className="pick-chips">
         <span className="pick-chips-note">
-          {withPicks.length} {withPicks.length === 1 ? 'pick' : 'picks'} in — revealed at kickoff
+          {withPicks.length} {withPicks.length === 1 ? 'pick' : 'picks'} in — revealed when the
+          slate locks at the first kickoff
         </span>
       </div>
     );

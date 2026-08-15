@@ -44,9 +44,22 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
   const [coverOdds, setCoverOdds] = useState<Record<string, CoverOdds>>({});
   const results = useWeekResults(season.season, week);
 
+  // Ticks every 30s so the slate lock flips on time without a reload.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     store.getSettings().then(setSettings);
   }, [store]);
+
+  // Pool roster, for the commissioner's "enter picks for…" override.
+  const [members, setMembers] = useState<PoolProfile[]>([]);
+  useEffect(() => {
+    if (profile.isCommissioner) store.getMembers().then(setMembers);
+  }, [store, profile.isCommissioner]);
 
   const refresh = useCallback(async () => {
     const [s, e] = await Promise.all([
@@ -81,6 +94,26 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
     for (const g of week.games) map.set(g.id, g);
     return map;
   }, [week]);
+
+  // The whole slate hard-locks at the week's first kickoff — after that no
+  // picks can be added or changed (the entries trigger enforces the same
+  // rule server-side; only a commissioner override gets past it).
+  const picksLockAt = useMemo(() => {
+    if (!slate?.published || slate.games.length === 0) return null;
+    const kicks = slate.games
+      .map((g) => gamesById.get(g.gameId)?.date)
+      .filter((d): d is string => !!d)
+      .sort();
+    return kicks[0] ? new Date(kicks[0]) : null;
+  }, [slate, gamesById]);
+  const picksLocked = useMemo(() => {
+    if (!slate?.published) return false;
+    if (picksLockAt && now >= picksLockAt.getTime()) return true;
+    return slate.games.some((g) => {
+      const r = results[g.gameId];
+      return !!r && r.state !== 'pre';
+    });
+  }, [slate, picksLockAt, now, results]);
 
   // Kalshi cover odds: refresh every minute while a published slate is open.
   useEffect(() => {
@@ -169,30 +202,42 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slate, profile, week, gamesById]);
 
-  const myEntry = useMemo<PoolEntry>(() => {
-    const existing = entries.find((e) => e.playerId === profile.playerId);
+  // Whose sheet the Picks tab is editing: yours, or — commissioner only —
+  // any member's (for picks texted in by people who forgot). Commissioner
+  // edits of OTHER sheets bypass the slate lock; their own never does.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  useEffect(() => setEditingId(null), [weekIndex]);
+  const editingMember =
+    profile.isCommissioner && editingId && editingId !== profile.playerId
+      ? (members.find((m) => m.playerId === editingId) ?? null)
+      : null;
+  const overriding = editingMember != null;
+  const activeProfile = editingMember ?? profile;
+
+  const activeEntry = useMemo<PoolEntry>(() => {
+    const existing = entries.find((e) => e.playerId === activeProfile.playerId);
     return (
       existing ?? {
-        playerId: profile.playerId,
-        playerName: profile.playerName,
+        playerId: activeProfile.playerId,
+        playerName: activeProfile.playerName,
         picks: {},
         tiebreaker: null,
         updatedAt: '',
       }
     );
-  }, [entries, profile]);
+  }, [entries, activeProfile]);
 
-  const saveMyEntry = (mutate: (entry: PoolEntry) => PoolEntry) => {
-    const next = { ...mutate(myEntry), updatedAt: new Date().toISOString() };
+  const saveActiveEntry = (mutate: (entry: PoolEntry) => PoolEntry) => {
+    const next = { ...mutate(activeEntry), updatedAt: new Date().toISOString() };
     setEntries((prev) => {
-      const others = prev.filter((e) => e.playerId !== profile.playerId);
+      const others = prev.filter((e) => e.playerId !== next.playerId);
       return [...others, next];
     });
     store.saveEntry(season.season, week.seasonType, week.week, next).catch((err) => {
       alert(
         err instanceof Error && err.message.includes('locked')
-          ? 'Too late — that game already kicked off.'
-          : `Couldn’t save your pick: ${err instanceof Error ? err.message : 'unknown error'}`,
+          ? 'Too late — picks are locked for this week (first game kicked off).'
+          : `Couldn’t save the pick: ${err instanceof Error ? err.message : 'unknown error'}`,
       );
       refresh();
     });
@@ -200,8 +245,9 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
 
   const handlePick = (gameId: string, side: PickSide) => {
     const game = gamesById.get(gameId);
-    if (!game || !slate?.published || isGameLocked(game, results[gameId])) return;
-    saveMyEntry((entry) => {
+    if (!game || !slate?.published) return;
+    if (!overriding && (picksLocked || isGameLocked(game, results[gameId]))) return;
+    saveActiveEntry((entry) => {
       const picks = { ...entry.picks };
       if (picks[gameId] === side) delete picks[gameId];
       else picks[gameId] = side;
@@ -210,7 +256,8 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
   };
 
   const handleTiebreaker = (home: number | null, away: number | null) => {
-    saveMyEntry((entry) => ({
+    if (!overriding && picksLocked) return;
+    saveActiveEntry((entry) => ({
       ...entry,
       tiebreaker: home == null && away == null ? null : { home: home ?? 0, away: away ?? 0 },
     }));
@@ -233,9 +280,9 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
   };
 
   const slateGameIds = slate?.published ? slate.games.map((g) => g.gameId) : [];
-  const pickedCount = slateGameIds.filter((id) => myEntry.picks[id]).length;
+  const pickedCount = slateGameIds.filter((id) => activeEntry.picks[id]).length;
   const allPicked = slateGameIds.length > 0 && pickedCount === slateGameIds.length;
-  const tiebreakerSet = myEntry.tiebreaker != null;
+  const tiebreakerSet = activeEntry.tiebreaker != null;
   const showPickBar = tab === 'picks' && slateGameIds.length > 0;
 
   return (
@@ -307,15 +354,47 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
 
       <main className="game-list">
         {tab === 'picks' && (
-          <PickSheet
-            week={week}
-            slate={displaySlate}
-            entry={myEntry}
-            results={results}
-            coverOdds={coverOdds}
-            onPick={handlePick}
-            onTiebreaker={handleTiebreaker}
-          />
+          <>
+            {profile.isCommissioner && members.length > 1 && (
+              <div className="commish-bar">
+                <label className="commish-label">
+                  Entering picks for
+                  <select
+                    value={activeProfile.playerId}
+                    onChange={(e) => setEditingId(e.target.value)}
+                  >
+                    {[profile, ...members.filter((m) => m.playerId !== profile.playerId)].map(
+                      (m) => (
+                        <option key={m.playerId} value={m.playerId}>
+                          {m.playerId === profile.playerId
+                            ? `${profile.playerName} (you)`
+                            : m.playerName}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+                {overriding && (
+                  <span className="commish-note">
+                    Commissioner override — the lock doesn’t apply here. Only enter picks the
+                    player sent you before kickoff.
+                  </span>
+                )}
+              </div>
+            )}
+            <PickSheet
+              week={week}
+              slate={displaySlate}
+              entry={activeEntry}
+              results={results}
+              coverOdds={coverOdds}
+              picksLockAt={picksLockAt}
+              picksLocked={picksLocked}
+              overriding={overriding}
+              onPick={handlePick}
+              onTiebreaker={handleTiebreaker}
+            />
+          </>
         )}
         {tab === 'board' && (
           <ScoreboardTab
@@ -324,6 +403,7 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
             entries={entries}
             results={results}
             coverOdds={coverOdds}
+            picksLocked={picksLocked}
             currentPlayerId={profile.playerId}
           />
         )}
@@ -374,7 +454,7 @@ export default function App({ store, profile, inviteCode, onSignOut }: AppProps)
                 alert(
                   allPicked && tiebreakerSet
                     ? `Sheet complete — ${pickedCount} picks + tiebreaker in for ${week.label}! 🔒`
-                    : `${pickedCount}/${slateGameIds.length} picks saved${tiebreakerSet ? '' : ' — don’t forget the tiebreaker'}. You can change them until kickoff.`,
+                    : `${pickedCount}/${slateGameIds.length} picks saved${tiebreakerSet ? '' : ' — don’t forget the tiebreaker'}. You can change them until the first game kicks off.`,
                 )
               }
             >

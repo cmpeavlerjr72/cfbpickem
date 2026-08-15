@@ -33,6 +33,15 @@ in one catch-up pass, then resume the rule.
   score, closest total wins). 1 pt/game, push = ½ pt (configurable). Weekly winners +
   season standings (total pts, weekly wins break ties). SU pools show Kalshi moneyline
   odds (`KXNCAAFGAME`) instead of spread odds.
+- **Pick deadline: the whole slate locks at the week's first kickoff** (no per-game
+  trickle — prevents late-addition picks after early games start). Enforced by the
+  `enforce_pick_locks` trigger server-side and mirrored in the UI (`picksLocked` in
+  `App.tsx`). Everyone's picks + tiebreaker reveal at that same instant (`week_entries`
+  RPC). **Commissioner override:** the commish can enter/adjust any OTHER member's picks
+  at any time (people text in picks they forgot to enter) via the "Entering picks for…"
+  selector on the Picks tab; the trigger bypasses locks only when a commissioner writes
+  someone else's entry — their own sheet locks like everyone's. The commish also sees all
+  picks pre-lock.
 - Code: `web/src/pool/` — `types.ts` (model), `store.ts` (**PoolStore interface = the
   Supabase seam**; LocalPoolStore/localStorage for now), `scoring.ts` (pure ATS
   grading/leaderboards), `kalshi.ts` (cover odds). UI: `PoolSetup`, `SlateBuilder`,
@@ -61,18 +70,23 @@ the Supabase URL/anon key to the production build.
   `web/.env.local` (`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`, git-ignored).
   Without that file the app falls back to LocalPoolStore (offline single-browser mode).
 - Schema in `supabase/migrations/`: profiles, pools (+invite codes), pool_members,
-  games (kickoffs, for lock enforcement), slates, entries. RLS: players only write their
-  own entry; opponents' picks come via the `week_entries` RPC which hides picks until each
-  game kicks off; a trigger rejects pick changes after kickoff; pools are created/joined
+  games (kickoffs, for lock enforcement), slates, entries. RLS: players write their own
+  entry, commissioners can also write any member's entry in their pool; opponents' picks
+  come via the `week_entries` RPC which hides them until the slate locks (first kickoff;
+  commissioners always see them); the `enforce_pick_locks` trigger rejects writes after
+  the slate lock except commissioner writes to others' entries; pools are created/joined
   via `create_pool`/`join_pool` RPCs.
 - **Pushing migrations:** the direct db host is IPv6-only and unreachable from this box —
   use the pooler:
   `npx supabase db push --db-url "postgresql://postgres.nczxyombguocejgurwop:<DB_PASSWORD>@aws-0-us-west-2.pooler.supabase.com:5432/postgres"`
 - After refetching season data, also regen + push the games seed:
   `node data/generate-games-migration.mjs 2026` then db push (keeps kickoff locks accurate).
-- Auth = email magic link (`AuthGate.tsx`); auth redirect URLs live in
-  `supabase/config.toml` [auth] — add the production URL there and `supabase config push`
-  when the site deploys.
+- Auth = email + password (`AuthGate.tsx`), with a reset-email recovery flow
+  (`resetPasswordForEmail` → `PASSWORD_RECOVERY` event → set-new-password form). Accounts
+  from the old magic-link era have no password — they use "Forgot password?" to set one.
+  Auth redirect URLs live in `supabase/config.toml` [auth] — add new URLs there and
+  `supabase config push`. Free-tier built-in SMTP is heavily rate-limited (~2-4
+  emails/hour), but only signup confirmations/resets send email now.
 - Edge Function `supabase/functions/kalshi` proxies Kalshi for production
   (verify_jwt=false in config.toml); deploy with `npx supabase functions deploy kalshi`
   (needs `supabase login` + `supabase link`, which require the user's browser).

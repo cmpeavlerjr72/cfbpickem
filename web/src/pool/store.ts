@@ -19,6 +19,9 @@ export interface PoolStore {
   /** All entries for a week (every player in the pool). */
   getEntries(season: number, seasonType: number, week: number): Promise<PoolEntry[]>;
   saveEntry(season: number, seasonType: number, week: number, entry: PoolEntry): Promise<void>;
+
+  /** Everyone in the pool, whether or not they've entered picks yet. */
+  getMembers(): Promise<PoolProfile[]>;
 }
 
 const profileKey = 'cfb-pickem:pool:profile';
@@ -85,6 +88,11 @@ class LocalPoolStore implements PoolStore {
     const map = readJson<Record<string, PoolEntry>>(key) ?? {};
     map[entry.playerId] = entry;
     writeJson(key, map);
+  }
+
+  async getMembers(): Promise<PoolProfile[]> {
+    const profile = await this.getProfile();
+    return profile ? [profile] : [];
   }
 }
 
@@ -245,5 +253,19 @@ export class SupabasePoolStore implements PoolStore {
       { onConflict: 'pool_id,season,season_type,week,player_id' },
     );
     if (error) throw new Error(error.message);
+  }
+
+  async getMembers(): Promise<PoolProfile[]> {
+    const { data, error } = await this.db
+      .from('pool_members')
+      .select('player_id, is_commissioner, profiles(display_name)')
+      .eq('pool_id', this.poolId);
+    if (error || !data) return [];
+    return data.map((row) => ({
+      playerId: row.player_id,
+      playerName:
+        (row.profiles as unknown as { display_name: string } | null)?.display_name ?? 'Player',
+      isCommissioner: row.is_commissioner,
+    }));
   }
 }

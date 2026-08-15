@@ -1,4 +1,4 @@
-// Entry composition: Supabase mode goes through AuthGate (magic link +
+// Entry composition: Supabase mode goes through AuthGate (email/password +
 // pool membership); without env credentials we fall back to the original
 // single-browser local store so the app still runs offline.
 
