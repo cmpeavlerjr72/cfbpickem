@@ -22,18 +22,24 @@ rate limit raised 2→30/hr, and a test reset was accepted end-to-end. Interim l
 sender is `onboarding@resend.dev`, and without a verified domain **Resend only delivers
 to the Resend account owner's own address** — so pool-wide resets DON'T work yet.
 
+Domain purchased 2026-08-15: **pattersonspickem.com** (note the extra `s` vs the
+`pattersonpickem` Render subdomain), DNS hosted at Squarespace Domains. The Resend API
+key is send-only restricted, so domain status can't be checked via the Resend API —
+probe DNS instead (`resend._domainkey.pattersonspickem.com` TXT + `send.` MX/TXT).
+
 Remaining steps:
 
-1. [user] Buy a domain (~$10/yr — Porkbun/Cloudflare/Namecheap). Resend requires a
-   verified domain to send to other people. (Bonus: Render can serve the site on it for
-   free later.)
-2. [user] Resend → Domains → Add domain → add the 3 DNS records at the registrar →
-   wait for verification (usually minutes). Same API key keeps working.
-3. [claude] Flip `admin_email` in `[auth.email.smtp]` to `noreply@<domain>` and
-   `supabase config push` (needs `SUPABASE_ACCESS_TOKEN` + `RESEND_API_KEY` env vars;
-   creds in session memory — never in the repo).
-4. [user+claude] Re-test a reset to a NON-owner mailbox, check spam.
-5. [user] Only then: announce to legacy members that "Forgot password?" sets their
+1. [user] Resend dashboard → Domains → Add Domain → `pattersonspickem.com`, then copy
+   the records it shows into Squarespace (Domains → pattersonspickem.com → DNS →
+   custom records) and wait for Resend to show Verified (usually minutes). Same API
+   key keeps working.
+2. [claude] Flip `admin_email` in `[auth.email.smtp]` to
+   `noreply@pattersonspickem.com` and `supabase config push` (needs
+   `SUPABASE_ACCESS_TOKEN` + `RESEND_API_KEY` env vars; creds in session memory —
+   never in the repo).
+3. [user+claude] Re-test a reset (delivery from the new domain to gmail exercises the
+   new SPF/DKIM), ideally also to a non-owner mailbox, check spam.
+4. [user] Only then: announce to legacy members that "Forgot password?" sets their
    password.
 
 ## P1 — Egress work (before the first big Saturday)
