@@ -1,12 +1,19 @@
 // Live results: fetch scores from ESPN, cache finals, lock games at kickoff,
-// and grade picks. Mirrors web/src/results.ts (see CLAUDE.md parity rule).
+// and grade picks. Mirrors web/src/results.ts (see CLAUDE.md parity rule) —
+// only the storage layer differs (AsyncStorage here, localStorage on web).
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Game, Picks, SeasonData, WeekData } from './types';
-import { picksStorageKey } from './types';
+import type { Game, WeekData } from './types';
 
 const SCOREBOARD =
   'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard';
+
+export interface EspnOdds {
+  details: string | null; // e.g. "UGA -6.5"
+  spread: number | null; // home POV: negative = home favored
+  overUnder: number | null;
+  provider: string | null;
+}
 
 export interface GameResult {
   gameId: string;
@@ -17,6 +24,15 @@ export interface GameResult {
   homeScore: number | null;
   awayScore: number | null;
   winnerTeamId: string | null;
+  // Live situation (in-progress games only)
+  period: number | null;
+  clock: string | null;
+  possessionTeamId: string | null;
+  downDistance: string | null;
+  isRedZone: boolean;
+  lastPlay: string | null;
+  /** ESPN's line for the game (pregame). */
+  odds: EspnOdds | null;
 }
 
 /** gameId -> result */
@@ -55,6 +71,10 @@ function parseScoreboard(json: unknown): WeekResults {
         }
       }
     }
+    const situation = comp.situation ?? {};
+    const rawOdds = comp.odds?.[0] ?? null;
+    const spread = rawOdds ? Number(rawOdds.spread ?? rawOdds.pointSpread) : NaN;
+    const overUnder = rawOdds ? Number(rawOdds.overUnder ?? rawOdds.total) : NaN;
     results[event.id] = {
       gameId: event.id,
       statusName: statusType.name ?? 'STATUS_SCHEDULED',
@@ -64,9 +84,41 @@ function parseScoreboard(json: unknown): WeekResults {
       homeScore: home?.score != null ? Number(home.score) : null,
       awayScore: away?.score != null ? Number(away.score) : null,
       winnerTeamId,
+      period: comp.status?.period ?? event.status?.period ?? null,
+      clock: comp.status?.displayClock ?? event.status?.displayClock ?? null,
+      possessionTeamId: situation.possession != null ? String(situation.possession) : null,
+      downDistance: situation.downDistanceText ?? situation.shortDownDistanceText ?? null,
+      isRedZone: situation.isRedZone === true,
+      lastPlay: situation.lastPlay?.text ?? null,
+      odds: rawOdds
+        ? {
+            details: rawOdds.details ?? null,
+            spread: Number.isFinite(spread) ? spread : null,
+            overUnder: Number.isFinite(overUnder) ? overUnder : null,
+            provider: rawOdds.provider?.name ?? null,
+          }
+        : null,
     };
   }
   return results;
+}
+
+/**
+ * Fresh scoreboard fetch with no started-week guard and no caching — used
+ * pregame for ESPN lines (floating-spread display). Returns {} on error.
+ */
+export async function fetchWeekScoreboard(
+  season: number,
+  weekData: WeekData,
+): Promise<WeekResults> {
+  try {
+    const url = `${SCOREBOARD}?dates=${season}&seasontype=${weekData.seasonType}&week=${weekData.week}&groups=80&limit=400`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return parseScoreboard(await res.json());
+  } catch {
+    return {};
+  }
 }
 
 export function hasWeekStarted(week: WeekData): boolean {
@@ -114,79 +166,11 @@ export async function getWeekResults(season: number, weekData: WeekData): Promis
       allFinal,
       results,
     };
-    AsyncStorage.setItem(key, JSON.stringify(payload)).catch(() => {});
+    AsyncStorage.setItem(key, JSON.stringify(payload)).catch(() => {
+      // storage full — results just won't be cached
+    });
     return results;
   } catch {
     return cached?.results ?? {};
   }
-}
-
-async function loadPicks(key: string): Promise<Picks> {
-  try {
-    const raw = await AsyncStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as Picks) : {};
-  } catch {
-    return {};
-  }
-}
-
-export interface WeekSummary {
-  seasonType: number;
-  week: number;
-  label: string;
-  picks: number;
-  wins: number;
-  losses: number;
-  pending: number;
-  started: boolean;
-}
-
-export interface SeasonSummary {
-  wins: number;
-  losses: number;
-  pending: number;
-  totalPicks: number;
-  weeks: WeekSummary[];
-}
-
-export async function buildSeasonSummary(season: SeasonData): Promise<SeasonSummary> {
-  const weeks: WeekSummary[] = [];
-  let wins = 0;
-  let losses = 0;
-  let pending = 0;
-  let totalPicks = 0;
-  for (const weekData of season.weeks) {
-    const picks = await loadPicks(
-      picksStorageKey(season.season, weekData.seasonType, weekData.week),
-    );
-    const ids = Object.keys(picks).filter((id) => weekData.games.some((g) => g.id === id));
-    const started = hasWeekStarted(weekData);
-    const summary: WeekSummary = {
-      seasonType: weekData.seasonType,
-      week: weekData.week,
-      label: weekData.label,
-      picks: ids.length,
-      wins: 0,
-      losses: 0,
-      pending: 0,
-      started,
-    };
-    if (started && ids.length) {
-      const results = await getWeekResults(season.season, weekData);
-      for (const id of ids) {
-        const grade = gradePick(picks[id], results[id]);
-        if (grade === 'win') summary.wins++;
-        else if (grade === 'loss') summary.losses++;
-        else if (grade === 'pending') summary.pending++;
-      }
-    } else {
-      summary.pending = ids.length; // picked, not kicked off yet
-    }
-    wins += summary.wins;
-    losses += summary.losses;
-    pending += summary.pending;
-    totalPicks += ids.length;
-    weeks.push(summary);
-  }
-  return { wins, losses, pending, totalPicks, weeks };
 }

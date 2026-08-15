@@ -15,10 +15,17 @@ A college football pick'em game with two clients: a website and a mobile app. St
 
 **Whenever a change is made to either the web app or the mobile app, check whether the same change needs to be made on the other, and make it in the same working session.** The two clients should always be at the same feature state. This applies to features, UI behavior, data-model changes, and business logic (pick rules, scoring, lock times). If a change genuinely applies to only one platform (e.g. a platform-specific fix), note why in the commit/summary.
 
-**⚠️ Parity intentionally paused (Aug 2026):** while the iOS build sits in App Review, the
-website is moving ahead with the pool model (see below). Mobile still has the old
-"pick every game straight-up" flow. When Apple approves, port the pool features to mobile
-in one catch-up pass, then resume the rule.
+**Parity resumed Android-first (2026-08-15):** mobile now has the full pool model
+(auth, pick sheet, scoreboard, standings, slate lock, commissioner override) and ships
+**Android-only OTA updates** while the iOS binary sits in App Review:
+`cd mobile && npx eas update --branch production --platform android --environment production -m "..."`
+(EAS is logged in on this box; runtime 1.0.0 — JS-only changes ship OTA, adding a
+native module requires a new EAS build + Play submission). The in-review iOS build must
+stay untouched — **never publish an update without `--platform android`** until Apple
+approves; then one `--platform ios` update catches iOS up. Deliberate platform
+exceptions: SlateBuilder + pool settings UI are web-only (commissioner desk work);
+mobile has no LocalPoolStore fallback (Supabase config is baked in); password-reset
+links open the website.
 
 ## Pool model (web, funofficepools.com-style)
 
@@ -96,11 +103,14 @@ the Supabase URL/anon key to the production build.
 
 Shared concepts to keep in sync manually (no shared package yet):
 - `Game` / `Team` / `SeasonData` types: `web/src/types.ts` and `mobile/types.ts`
-- Pick logic and storage key format (`cfb-pickem:picks:<season>:<seasonType>:<week>`)
+- The pool layer: `web/src/pool/*` ↔ `mobile/pool/*` (types, scoring, spreads, store,
+  kalshi — mobile hits Kalshi directly, no CORS on native; web needs the proxy)
 - The results engine (`web/src/results.ts` / `mobile/results.ts`): live-score fetch from
   ESPN (`dates=<year>` param — `year=` is silently ignored!), finals cache
-  (`cfb-pickem:results:<season>:<seasonType>:<week>`), lock-at-kickoff, pick grading
-- `GameCard` and `ResultsTab` components
+  (`cfb-pickem:results:<season>:<seasonType>:<week>`), lock-at-kickoff, pick grading;
+  plus the adaptive poller `live.ts` (document.hidden on web ↔ AppState on mobile)
+- Components: `AuthGate`, `AtsGameCard`, `PickSheet`, `ScoreboardTab`, `StandingsTab`
+  (RN versions mirror the web ones; only storage/styling primitives differ)
 
 ## Data
 

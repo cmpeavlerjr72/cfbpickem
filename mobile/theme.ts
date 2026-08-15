@@ -10,6 +10,8 @@ export const colors = {
   greenBorder: '#86efac',
   red: '#dc2626',
   redSoft: '#fef2f2',
+  amber: '#d97706',
+  amberSoft: '#fef3c7',
   bg: '#f1f5f9',
   card: '#ffffff',
   border: '#e2e8f0',
