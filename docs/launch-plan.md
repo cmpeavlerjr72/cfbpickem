@@ -16,26 +16,25 @@ New signups send no email (confirmations off), but **every magic-link-era member
 use "Forgot password?" once** to set a password, and that sends an email. Without this,
 onboarding night stalls.
 
-Steps (owner in brackets):
+**Status 2026-08-15:** SMTP is LIVE in interim mode. Resend account exists, API key is
+wired in (`[auth.email.smtp]` in config.toml, secret via `env(RESEND_API_KEY)`, pushed),
+rate limit raised 2→30/hr, and a test reset was accepted end-to-end. Interim limitation:
+sender is `onboarding@resend.dev`, and without a verified domain **Resend only delivers
+to the Resend account owner's own address** — so pool-wide resets DON'T work yet.
 
-1. [user] Buy a domain (~$10/yr — Porkbun/Cloudflare/Namecheap). Needed because
-   Resend requires a verified domain; sending from a gmail address via any relay has
-   deliverability problems. (Bonus: Render can serve the site on it for free later.)
-2. [user] Sign up at resend.com (free: 3,000 emails/mo, 100/day — plenty).
-3. [user] Resend → Domains → Add domain → add the 3 DNS records at the registrar →
-   wait for verification (usually minutes).
-4. [user] Create a Resend API key, hand it to Claude.
-5. [claude] Configure SMTP on the Supabase project (host `smtp.resend.com`, port 587,
-   user `resend`, password = API key, sender `noreply@<domain>`) — via
-   `supabase/config.toml` `[auth.email.smtp]` with `env()` secret substitution +
-   `supabase config push` (needs `SUPABASE_ACCESS_TOKEN`; see session memory — creds
-   stay out of the repo). Dashboard alternative: Project Settings → Authentication →
-   SMTP.
-6. [claude] Raise `[auth.rate_limit] email_sent` from 2/hour to ~30/hour and push.
-7. [user+claude] End-to-end test: password reset to a real mailbox, check it's not in
-   spam.
-8. [user] Only after 7 passes: announce to legacy members that "Forgot password?" sets
-   their password.
+Remaining steps:
+
+1. [user] Buy a domain (~$10/yr — Porkbun/Cloudflare/Namecheap). Resend requires a
+   verified domain to send to other people. (Bonus: Render can serve the site on it for
+   free later.)
+2. [user] Resend → Domains → Add domain → add the 3 DNS records at the registrar →
+   wait for verification (usually minutes). Same API key keeps working.
+3. [claude] Flip `admin_email` in `[auth.email.smtp]` to `noreply@<domain>` and
+   `supabase config push` (needs `SUPABASE_ACCESS_TOKEN` + `RESEND_API_KEY` env vars;
+   creds in session memory — never in the repo).
+4. [user+claude] Re-test a reset to a NON-owner mailbox, check spam.
+5. [user] Only then: announce to legacy members that "Forgot password?" sets their
+   password.
 
 ## P1 — Egress work (before the first big Saturday)
 
