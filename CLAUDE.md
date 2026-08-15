@@ -7,6 +7,9 @@ A college football pick'em game with two clients: a website and a mobile app. St
 - `web/` — website: Vite + React + TypeScript
 - `mobile/` — mobile app: Expo (React Native) + TypeScript
 - `data/` — season data pipeline (source of truth for game data)
+- `docs/launch-plan.md` — **pre-season launch-readiness plan** (P0 custom SMTP, egress
+  work incl. the Kalshi worker design, the ESPN-stays-client-direct decision, backup
+  strategy, pre-launch checks). Keep statuses there current.
 
 ## STANDING RULE: web/mobile parity
 
