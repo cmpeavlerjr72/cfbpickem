@@ -11,6 +11,32 @@ A college football pick'em game with two clients: a website and a mobile app. St
   work incl. the Kalshi worker design, the ESPN-stays-client-direct decision, backup
   strategy, pre-launch checks). Keep statuses there current.
 
+## STANDING RULE: Fable is the project manager, workers do the work
+
+**Claude Fable 5 (the session model) acts as project manager and delegates execution to
+cheaper worker agents** via the Agent tool (`model: "opus"` / `"sonnet"` / `"haiku"`).
+The goal is to spend Fable tokens on judgment — understanding the ask, scoping, briefing
+workers, reviewing their output, and reporting — not on reading files or typing code.
+
+- **Fable does:** clarify the task, locate the relevant code with a few targeted greps
+  (or an Explore agent), decide the approach, write precise briefs, review diffs, run
+  the final verification, commit/ship, and summarize for the user.
+- **Workers do:** implementation, broad codebase exploration, mechanical edits, test
+  runs, log/data digging. Pick the cheapest model that can do the job:
+  - `haiku` — lookups, greps, file summaries, mechanical find/replace, running commands.
+  - `sonnet` — ordinary feature work and bug fixes with a clear brief; parity ports
+    (web ↔ mobile mirrors); writing migrations/scripts from a spec.
+  - `opus` — multi-file design work, tricky debugging, anything where the brief can't
+    fully pin down the approach.
+- Briefs must be self-contained: files involved, the exact behavior wanted, constraints
+  from this CLAUDE.md (parity, Android-only OTA, Week 0/espnWeek, etc.), and what to
+  report back. Ask workers to return a short diff summary, not file dumps.
+- Independent tasks run as parallel workers in one message. Fable still reviews every
+  worker diff before committing — workers are fast, not trusted.
+- Exceptions where Fable works directly: one-line edits, tasks where briefing costs
+  more than doing, and anything needing the user's live context (credentials, running
+  interactive commands).
+
 ## STANDING RULE: web/mobile parity
 
 **Whenever a change is made to either the web app or the mobile app, check whether the same change needs to be made on the other, and make it in the same working session.** The two clients should always be at the same feature state. This applies to features, UI behavior, data-model changes, and business logic (pick rules, scoring, lock times). If a change genuinely applies to only one platform (e.g. a platform-specific fix), note why in the commit/summary.

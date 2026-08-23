@@ -15,12 +15,17 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import gamesJson from './assets/games.json';
 import type { Game, SeasonData, WeekData } from './types';
 import { fetchWeekScoreboard, isGameLocked } from './results';
 import { useWeekResults } from './live';
+import { useOtaUpdates } from './useOtaUpdates';
 import type { CoverOdds, PickSide, PoolEntry, PoolProfile, PoolSettings, WeekSlate } from './pool/types';
 import { DEFAULT_SETTINGS } from './pool/types';
 import type { PoolStore } from './pool/store';
@@ -53,7 +58,27 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style="light" />
       <AuthGate>{(account) => <LeagueSwitcher account={account} />}</AuthGate>
+      <OtaBanner />
     </SafeAreaProvider>
+  );
+}
+
+// Sits above everything (including the sign-in screen) so a player is never
+// stuck running a stale bundle just because they haven't force-quit the app
+// in a while — see useOtaUpdates.ts for the check/download/reload logic.
+function OtaBanner() {
+  const { updateReady, restart } = useOtaUpdates();
+  const insets = useSafeAreaInsets();
+  if (!updateReady) return null;
+  return (
+    <View style={[styles.otaBanner, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
+      <View style={styles.otaBannerRow}>
+        <Text style={styles.otaBannerText}>New version ready</Text>
+        <Pressable style={styles.otaBannerBtn} onPress={restart}>
+          <Text style={styles.otaBannerBtnText}>Restart</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -535,6 +560,40 @@ function PoolApp({ store, profile, poolName, inviteCode, onSwitchLeague }: PoolA
 }
 
 const styles = StyleSheet.create({
+  otaBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    backgroundColor: colors.navy,
+    borderBottomWidth: 1,
+    borderColor: colors.navyLight,
+  },
+  otaBannerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  otaBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  otaBannerBtn: {
+    backgroundColor: colors.green,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  otaBannerBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: colors.navy,
