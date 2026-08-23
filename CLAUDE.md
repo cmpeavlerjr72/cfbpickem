@@ -43,12 +43,17 @@ workers, reviewing their output, and reporting — not on reading files or typin
 
 **Parity resumed Android-first (2026-08-15):** mobile now has the full pool model
 (auth, pick sheet, scoreboard, standings, slate lock, commissioner override) and ships
-**Android-only OTA updates** while the iOS binary sits in App Review:
+**Android-only OTA updates** while iOS is between App Store submissions:
 `cd mobile && npx eas update --branch production --platform android --environment production -m "..."`
 (EAS is logged in on this box; runtime 1.0.0 — JS-only changes ship OTA, adding a
-native module requires a new EAS build + Play submission). The in-review iOS build must
-stay untouched — **never publish an update without `--platform android`** until Apple
-approves; then one `--platform ios` update catches iOS up. Deliberate platform
+native module requires a new EAS build + Play submission). **iOS status (2026-08-23):**
+the original stripped account-free v1 build was rejected Aug 20 under Guideline 4.2
+Minimum Functionality (read as too thin, like a notes app); we're resubmitting a new iOS
+build of this same full pool app — no more account-free mode — with `supportsTablet:
+false` (iPhone-only, since Apple reviewed on an iPad Air) and a demo league seeded via
+`data/seed-demo-league.mjs` for App Review (see `mobile/store/SUBMISSION.md`). Until
+Apple approves, **never publish an update without `--platform android`**; then one
+`--platform ios` update catches iOS up. Deliberate platform
 exceptions: mobile has no LocalPoolStore fallback (Supabase config is baked in) and
 password-reset links open the website. Everything else — including the commissioner
 SlateBuilder and the league dashboard — exists on both platforms.
@@ -120,6 +125,12 @@ the Supabase URL/anon key to the production build.
   commissioners always see them); the `enforce_pick_locks` trigger rejects writes after
   the slate lock except commissioner writes to others' entries; pools are created/joined
   via `create_pool`/`join_pool` RPCs.
+- **Account deletion (Apple 5.1.1(v)):** the `delete_account()` RPC (called straight from
+  `Dashboard.tsx` on both platforms, like the display-name/password updates) deletes the
+  caller's leagues where they're the only member, promotes the longest-standing member
+  (earliest `joined_at`) when the sole commissioner leaves, re-stamps `pools.created_by`
+  onto a surviving member, then deletes the `auth.users` row so profiles → memberships →
+  entries cascade away. One atomic function.
 - **Pushing migrations:** the direct db host is IPv6-only and unreachable from this box —
   use the pooler:
   `npx supabase db push --db-url "postgresql://postgres.nczxyombguocejgurwop:<DB_PASSWORD>@aws-0-us-west-2.pooler.supabase.com:5432/postgres"`
@@ -167,10 +178,13 @@ Shared concepts to keep in sync manually (no shared package yet):
 ## App Store / Play submission (mobile)
 
 Everything lives in `mobile/store/`: `SUBMISSION.md` is the step-by-step checklist (EAS
-commands, the CHANGEME bundle IDs, known risks), `LISTINGS.md` has the store copy,
-`privacy-policy.html` must be hosted publicly, and `screenshots/` holds generated store
-assets. v1 is intentionally account-free and local-only; post-approval JS changes ship OTA
-via `eas update` without store review.
+commands, known risks, and the current iOS resubmission steps after the Aug 20 4.2
+rejection), `LISTINGS.md` has the store copy, `web/public/privacy.html` is the hosted
+privacy policy (mobile's `store/privacy-policy.html` is just a pointer to it, not a
+duplicate), and `screenshots/` holds generated store assets. The app being submitted is
+the full pool app — accounts, multi-league dashboard, commissioner tools — not an
+account-free v1; a demo league (`data/seed-demo-league.mjs`) is seeded for App Review.
+Post-approval JS changes ship OTA via `eas update` without store review.
 
 ## Running
 

@@ -1401,3 +1401,33 @@ section:first-child .day-header {
   color: var(--green);
   margin: 0;
 }
+
+/* Delete account (Apple 5.1.1(v)) — de-emphasized until the confirm step. */
+.dash-danger {
+  border-color: var(--red);
+}
+
+.danger-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.danger-btn {
+  background: var(--red);
+  border: 1.5px solid var(--red);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 10px;
+}
+
+.danger-link:disabled,
+.danger-btn:disabled {
+  opacity: 0.5;
+}

@@ -1,0 +1,10 @@
+{
+  "name": "cfb-pickem-data",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Season data pipeline + one-off DB seed scripts. Only seed-demo-league.mjs needs dependencies; the fetch/sync scripts use node builtins only.",
+  "dependencies": {
+    "pg": "^8.13.0"
+  }
+}

@@ -113,9 +113,11 @@ already skip polling.)
 Apple review is slow, so mobile moved ahead on Android alone: the full pool model
 (auth, pick sheet, scoreboard, standings, slate lock, commish override) was ported to
 the Expo app and published as an **Android-only OTA update** on the `production`
-channel (runtime 1.0.0 — reaches the published Play build on restart). The iOS binary
-in App Review is untouched; **every update must pass `--platform android`** until
-Apple approves, then one `--platform ios` update catches iOS up. User is
+channel (runtime 1.0.0 — reaches the published Play build on restart). **iOS status
+(2026-08-23): the stripped account-free v1 build was rejected Aug 20 under Guideline
+4.2 Minimum Functionality; resubmitting a new iOS build of the full pool app** (see
+`mobile/store/SUBMISSION.md`). Until approved, **every update must pass
+`--platform android`**, then one `--platform ios` update catches iOS up. User is
 bug-hunting on their Android phone; expect mobile fix requests. Slate building stays
 web-only by design.
 

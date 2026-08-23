@@ -1,10 +1,11 @@
 // The account dashboard — mirrors web/src/components/Dashboard.tsx (see
 // CLAUDE.md parity rule): every league you're in (tap to enter), join by
 // invite code, start a new league, and account settings (display name,
-// password, sign out).
+// password, sign out, delete account).
 
 import { useState } from 'react';
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -85,6 +86,32 @@ export function Dashboard({ account, onSelect }: DashboardProps) {
       setNewPassword('');
       return 'Password updated.';
     });
+
+  // Apple Guideline 5.1.1(v): account deletion has to be doable in-app. The
+  // delete_account RPC tidies up leagues (promoting a new commissioner if
+  // needed) and deletes the auth user, which cascades profile/picks away.
+  const deleteAccount = () =>
+    run(async () => {
+      const { error: err } = await supabase.rpc('delete_account');
+      if (err) throw new Error(err.message);
+      // account.signOut() calls supabase.auth.signOut(); the server side of
+      // that can fail now that the user is gone, but it clears the local
+      // session regardless and AuthGate drops back to the sign-in screen.
+      account.signOut();
+      return null;
+    });
+
+  const confirmDeleteAccount = () =>
+    Alert.alert(
+      'Delete account?',
+      'This permanently deletes your account, your picks, and removes you from your ' +
+        'leagues. If you’re the only commissioner of a league, the longest-standing ' +
+        'member becomes commissioner.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => void deleteAccount() },
+      ],
+    );
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -213,6 +240,21 @@ export function Dashboard({ account, onSelect }: DashboardProps) {
           </View>
           <Pressable style={styles.signOut} onPress={account.signOut}>
             <Text style={styles.signOutText}>Sign out</Text>
+          </Pressable>
+        </View>
+
+        <View style={[styles.card, styles.dangerCard]}>
+          <Text style={styles.cardTitle}>Delete account</Text>
+          <Text style={styles.hint}>
+            Permanently removes your account, your picks, and your league memberships. This
+            can’t be undone.
+          </Text>
+          <Pressable
+            style={[styles.dangerLink, busy && styles.btnDisabled]}
+            disabled={busy}
+            onPress={confirmDeleteAccount}
+          >
+            <Text style={styles.dangerLinkText}>Delete account</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -365,6 +407,18 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: 13,
     color: colors.textDim,
+    textDecorationLine: 'underline',
+  },
+  dangerCard: {
+    borderColor: colors.red,
+  },
+  dangerLink: {
+    alignSelf: 'flex-start',
+  },
+  dangerLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.red,
     textDecorationLine: 'underline',
   },
 });

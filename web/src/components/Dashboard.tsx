@@ -1,7 +1,7 @@
 // The account dashboard: every league you're in (tap to enter), join by
 // invite code, start a new league, and account settings (display name,
-// password, sign out). Mirrored by mobile/components/Dashboard.tsx (see
-// CLAUDE.md parity rule).
+// password, sign out, delete account). Mirrored by
+// mobile/components/Dashboard.tsx (see CLAUDE.md parity rule).
 
 import { useState } from 'react';
 import { supabase } from '../pool/supabase';
@@ -20,6 +20,7 @@ export function Dashboard({ account, onSelect }: DashboardProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const run = async (fn: () => Promise<string | null>) => {
     setBusy(true);
@@ -74,6 +75,21 @@ export function Dashboard({ account, onSelect }: DashboardProps) {
       if (err) throw new Error(err.message);
       setNewPassword('');
       return 'Password updated.';
+    });
+
+  // Apple Guideline 5.1.1(v): account deletion has to be doable in-app. The
+  // delete_account RPC tidies up leagues (promoting a new commissioner if
+  // needed) and deletes the auth user, which cascades profile/picks away.
+  const deleteAccount = () =>
+    run(async () => {
+      const { error: err } = await supabase!.rpc('delete_account');
+      if (err) throw new Error(err.message);
+      setConfirmDelete(false);
+      // account.signOut() calls supabase.auth.signOut(); the server side of
+      // that can fail now that the user is gone, but it clears the local
+      // session regardless and AuthGate drops back to the sign-in screen.
+      account.signOut();
+      return null;
     });
 
   return (
@@ -198,6 +214,52 @@ export function Dashboard({ account, onSelect }: DashboardProps) {
           <button type="button" className="auth-signout" onClick={account.signOut}>
             Sign out
           </button>
+        </section>
+
+        <section className="dash-card dash-danger">
+          <h2 className="dash-card-title">Delete account</h2>
+          {confirmDelete ? (
+            <>
+              <p className="dash-hint">
+                This permanently deletes your account, your picks, and removes you from your
+                leagues. If you’re the only commissioner of a league, the longest-standing
+                member becomes commissioner.
+              </p>
+              <div className="dash-row">
+                <button
+                  type="button"
+                  className="danger-btn"
+                  disabled={busy}
+                  onClick={deleteAccount}
+                >
+                  Yes, delete my account
+                </button>
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  disabled={busy}
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="dash-hint">
+                Permanently removes your account, your picks, and your league memberships.
+                This can’t be undone.
+              </p>
+              <button
+                type="button"
+                className="danger-link"
+                disabled={busy}
+                onClick={() => setConfirmDelete(true)}
+              >
+                Delete account
+              </button>
+            </>
+          )}
         </section>
       </div>
     </div>
