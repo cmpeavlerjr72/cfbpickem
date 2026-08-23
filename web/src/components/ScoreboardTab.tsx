@@ -24,6 +24,7 @@ interface ScoreboardTabProps {
   coverOdds: Record<string, CoverOdds>;
   picksLocked: boolean;
   currentPlayerId: string;
+  isCommissioner: boolean;
 }
 
 export function ScoreboardTab({
@@ -34,6 +35,7 @@ export function ScoreboardTab({
   coverOdds,
   picksLocked,
   currentPlayerId,
+  isCommissioner,
 }: ScoreboardTabProps) {
   const gamesById = useMemo(() => {
     const map = new Map<string, Game>();
@@ -73,7 +75,8 @@ export function ScoreboardTab({
               slateGame={sg}
               pickType={slate.pickType ?? 'ats'}
               result={result}
-              locked
+              locked={picksLocked}
+              readOnly
               pickedSide={myEntry?.picks[game.id] ?? null}
               coverOdds={coverOdds[game.id] ?? null}
             />
@@ -83,7 +86,8 @@ export function ScoreboardTab({
               slateGame={sg}
               result={result}
               entries={entries}
-              revealed={picksLocked}
+              picksLocked={picksLocked}
+              isCommissioner={isCommissioner}
               currentPlayerId={currentPlayerId}
             />
           </div>
@@ -117,14 +121,24 @@ interface PickChipsProps {
   slateGame: SlateGame;
   result?: GameResult;
   entries: PoolEntry[];
-  revealed: boolean;
+  picksLocked: boolean;
+  isCommissioner: boolean;
   currentPlayerId: string;
 }
 
-function PickChips({ game, slateGame, result, entries, revealed, currentPlayerId }: PickChipsProps) {
+function PickChips({
+  game,
+  slateGame,
+  result,
+  entries,
+  picksLocked,
+  isCommissioner,
+  currentPlayerId,
+}: PickChipsProps) {
   const withPicks = entries.filter((e) => e.picks[slateGame.gameId]);
   if (withPicks.length === 0) return null;
 
+  const revealed = picksLocked || isCommissioner;
   if (!revealed) {
     return (
       <div className="pick-chips">
@@ -136,10 +150,17 @@ function PickChips({ game, slateGame, result, entries, revealed, currentPlayerId
     );
   }
 
+  const commissionerPreview = isCommissioner && !picksLocked;
   const margin = result ? coverMargin(slateGame.homeSpread, result) : null;
   const started = !!result && result.state !== 'pre';
   return (
     <div className="pick-chips">
+      {commissionerPreview && (
+        <span className="pick-chips-note">
+          {withPicks.length} of {entries.length} {withPicks.length === 1 ? 'pick' : 'picks'} in ·
+          visible to you as commissioner
+        </span>
+      )}
       {withPicks.map((entry) => {
         const side = entry.picks[slateGame.gameId];
         const team = side === 'home' ? game.home : game.away;

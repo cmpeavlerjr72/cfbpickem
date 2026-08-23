@@ -422,6 +422,7 @@ export default function App({
             coverOdds={coverOdds}
             picksLocked={picksLocked}
             currentPlayerId={profile.playerId}
+            isCommissioner={profile.isCommissioner}
           />
         )}
         {tab === 'standings' && (

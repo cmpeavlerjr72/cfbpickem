@@ -1092,6 +1092,7 @@ section:first-child .day-header {
 .pick-chips-note {
   font-size: 12px;
   color: var(--text-dim);
+  flex-basis: 100%;
 }
 
 .pick-chip {

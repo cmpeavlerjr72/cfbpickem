@@ -103,6 +103,9 @@ interface AtsGameCardProps {
   pickType?: PickType;
   result?: GameResult | null;
   locked: boolean;
+  /** Force read-only regardless of `locked` — used by the Scoreboard tab,
+   * where `locked` only drives the "Locked" badge, not interactivity. */
+  readOnly?: boolean;
   pickedSide: PickSide | null;
   coverOdds?: CoverOdds | null;
   onPick?: (gameId: string, side: PickSide) => void;
@@ -114,12 +117,14 @@ export function AtsGameCard({
   pickType = 'ats',
   result,
   locked,
+  readOnly = false,
   pickedSide,
   coverOdds,
   onPick,
 }: AtsGameCardProps) {
   const { home, away } = game;
   if (!home || !away) return null;
+  const interactionLocked = locked || readOnly;
   const started = !!result && result.state !== 'pre';
   const live = !!result && result.state === 'in';
   const final = !!result?.completed;
@@ -148,7 +153,7 @@ export function AtsGameCard({
         showSpread={ats}
         coveringLabel={coveringLabel}
         picked={pickedSide === 'away'}
-        locked={locked}
+        locked={interactionLocked}
         score={result?.awayScore ?? null}
         showScore={started}
         covering={awayCovering}
@@ -166,7 +171,7 @@ export function AtsGameCard({
         showSpread={ats}
         coveringLabel={coveringLabel}
         picked={pickedSide === 'home'}
-        locked={locked}
+        locked={interactionLocked}
         score={result?.homeScore ?? null}
         showScore={started}
         covering={homeCovering}

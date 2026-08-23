@@ -471,6 +471,7 @@ function PoolApp({ store, profile, poolName, inviteCode, onSwitchLeague }: PoolA
               coverOdds={coverOdds}
               picksLocked={picksLocked}
               currentPlayerId={profile.playerId}
+              isCommissioner={profile.isCommissioner}
             />
           </ScrollView>
         )}
