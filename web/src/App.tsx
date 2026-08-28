@@ -9,6 +9,7 @@ import { DEFAULT_SETTINGS } from './pool/types';
 import type { PoolStore } from './pool/store';
 import { fetchCoverOddsForSlate } from './pool/kalshi';
 import { PickSheet } from './components/PickSheet';
+import { MembersTab } from './components/MembersTab';
 import { SlateBuilder } from './components/SlateBuilder';
 import { ScoreboardTab } from './components/ScoreboardTab';
 import { StandingsTab } from './components/StandingsTab';
@@ -26,6 +27,8 @@ function defaultWeekIndex(weeks: WeekData[]): number {
 }
 
 type Tab = 'picks' | 'board' | 'standings' | 'slate';
+/** The commissioner tab holds two views; a sub-toggle keeps the phone nav to four tabs. */
+type CommishView = 'slate' | 'members';
 
 interface AppProps {
   store: PoolStore;
@@ -49,6 +52,7 @@ export default function App({
     poolName ? { ...DEFAULT_SETTINGS, name: poolName } : DEFAULT_SETTINGS,
   );
   const [tab, setTab] = useState<Tab>('picks');
+  const [commishView, setCommishView] = useState<CommishView>('slate');
   const [weekIndex, setWeekIndex] = useState(() => defaultWeekIndex(season.weeks));
   const week = season.weeks[weekIndex];
   const [slate, setSlate] = useState<WeekSlate | null>(null);
@@ -435,15 +439,37 @@ export default function App({
           />
         )}
         {tab === 'slate' && profile.isCommissioner && (
-          <SlateBuilder
-            week={week}
-            slate={slate}
-            settings={settings}
-            season={season.season}
-            inviteCode={inviteCode}
-            onSave={handleSlateSave}
-            onSaveSettings={handleSettingsSave}
-          />
+          <>
+            <div className="standings-toggle commish-toggle">
+              <button
+                type="button"
+                className={commishView === 'slate' ? 'active' : ''}
+                onClick={() => setCommishView('slate')}
+              >
+                Slate
+              </button>
+              <button
+                type="button"
+                className={commishView === 'members' ? 'active' : ''}
+                onClick={() => setCommishView('members')}
+              >
+                Members &amp; dues
+              </button>
+            </div>
+            {commishView === 'slate' ? (
+              <SlateBuilder
+                week={week}
+                slate={slate}
+                settings={settings}
+                season={season.season}
+                inviteCode={inviteCode}
+                onSave={handleSlateSave}
+                onSaveSettings={handleSettingsSave}
+              />
+            ) : (
+              <MembersTab store={store} currentPlayerId={profile.playerId} />
+            )}
+          </>
         )}
       </main>
 

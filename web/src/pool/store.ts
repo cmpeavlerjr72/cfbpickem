@@ -2,7 +2,7 @@
 // multi-user backend; LocalPoolStore remains as the offline/dev fallback
 // when web/.env.local has no Supabase credentials.
 
-import type { PoolEntry, PoolProfile, PoolSettings, WeekSlate } from './types';
+import type { PoolEntry, PoolProfile, PoolSettings, RosterMember, WeekSlate } from './types';
 import { DEFAULT_SETTINGS } from './types';
 import { supabase } from './supabase';
 
@@ -22,6 +22,16 @@ export interface PoolStore {
 
   /** Everyone in the pool, whether or not they've entered picks yet. */
   getMembers(): Promise<PoolProfile[]>;
+
+  /**
+   * Commissioner only: the roster with contact emails and dues status. The
+   * database (league_roster RPC) rejects the call for anyone else — the UI
+   * gating is a courtesy, not the protection.
+   */
+  getRoster(): Promise<RosterMember[]>;
+
+  /** Commissioner only: mark a member paid / unpaid (RLS-enforced). */
+  setDuesPaid(playerId: string, paid: boolean): Promise<void>;
 }
 
 const profileKey = 'cfb-pickem:pool:profile';
@@ -30,6 +40,7 @@ const slateKey = (season: number, seasonType: number, week: number) =>
   `cfb-pickem:pool:slate:${season}:${seasonType}:${week}`;
 const entriesKey = (season: number, seasonType: number, week: number) =>
   `cfb-pickem:pool:entries:${season}:${seasonType}:${week}`;
+const duesKey = 'cfb-pickem:pool:dues';
 
 function readJson<T>(key: string): T | null {
   try {
@@ -94,6 +105,30 @@ class LocalPoolStore implements PoolStore {
     const profile = await this.getProfile();
     return profile ? [profile] : [];
   }
+
+  // Offline mode is a single browser with a single player and no accounts,
+  // so the "roster" is just you and dues are a local note to self.
+  async getRoster(): Promise<RosterMember[]> {
+    const profile = await this.getProfile();
+    if (!profile) return [];
+    return [
+      {
+        playerId: profile.playerId,
+        playerName: profile.playerName,
+        email: null,
+        isCommissioner: profile.isCommissioner,
+        joinedAt: '',
+        duesPaid: readJson<Record<string, boolean>>(duesKey)?.[profile.playerId] ?? false,
+        duesUpdatedAt: null,
+      },
+    ];
+  }
+
+  async setDuesPaid(playerId: string, paid: boolean): Promise<void> {
+    const map = readJson<Record<string, boolean>>(duesKey) ?? {};
+    map[playerId] = paid;
+    writeJson(duesKey, map);
+  }
 }
 
 export const localPoolStore: PoolStore = new LocalPoolStore();
@@ -121,6 +156,16 @@ interface WeekEntryRow {
   picks: PoolEntry['picks'] | null;
   tiebreaker: PoolEntry['tiebreaker'];
   updated_at: string;
+}
+
+interface RosterRow {
+  player_id: string;
+  display_name: string | null;
+  email: string | null;
+  is_commissioner: boolean;
+  joined_at: string;
+  dues_paid: boolean;
+  dues_updated_at: string | null;
 }
 
 export class SupabasePoolStore implements PoolStore {
@@ -267,5 +312,39 @@ export class SupabasePoolStore implements PoolStore {
         (row.profiles as unknown as { display_name: string } | null)?.display_name ?? 'Player',
       isCommissioner: row.is_commissioner,
     }));
+  }
+
+  // Emails live in auth.users, which no client can read. league_roster is a
+  // SECURITY DEFINER function that raises unless the caller commissions this
+  // pool, so a non-commissioner gets an error here rather than a filtered
+  // list (see 20260828180000_league_dues.sql).
+  async getRoster(): Promise<RosterMember[]> {
+    const { data, error } = await this.db.rpc('league_roster', { p_pool: this.poolId });
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as RosterRow[]).map((row) => ({
+      playerId: row.player_id,
+      playerName: row.display_name ?? 'Player',
+      email: row.email,
+      isCommissioner: row.is_commissioner,
+      joinedAt: row.joined_at,
+      duesPaid: row.dues_paid,
+      duesUpdatedAt: row.dues_updated_at,
+    }));
+  }
+
+  // RLS lets only this pool's commissioner update the row, and a column grant
+  // limits the write to dues_paid. A denied update comes back as zero rows
+  // (not an error), so the returned row is what proves the write landed.
+  async setDuesPaid(playerId: string, paid: boolean): Promise<void> {
+    const { data, error } = await this.db
+      .from('pool_members')
+      .update({ dues_paid: paid })
+      .eq('pool_id', this.poolId)
+      .eq('player_id', playerId)
+      .select('player_id');
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) {
+      throw new Error('Only this league’s commissioner can change dues.');
+    }
   }
 }

@@ -186,6 +186,24 @@ Share-sheet guide on iOS because WebKit has no install API.
   commissioners always see them); the `enforce_pick_locks` trigger rejects writes after
   the slate lock except commissioner writes to others' entries; pools are created/joined
   via `create_pool`/`join_pool` RPCs.
+- **Commissioner roster + dues (2026-08-28, migration `20260828180000_league_dues.sql`):**
+  `pool_members` gained `dues_paid` (+ `dues_updated_at` / `dues_updated_by`, stamped by
+  the `stamp_dues_update` trigger — never by the client). Writes are double-gated: an RLS
+  update policy scoped to `is_pool_commissioner(pool_id)` for WHICH ROWS, and a
+  **column-level grant** (`grant update (dues_paid)`) for WHICH COLUMNS — so a future
+  client-writable column on this table needs its own `grant update (…)`.
+  **Member emails are PII and live in `auth.users`**; the single path by which one
+  reaches a client is the `league_roster(pool)` SECURITY DEFINER RPC, which *raises* for
+  anyone who isn't that league's commissioner (no filtered-list fallback, no view over
+  `auth.users`). Never log, copy or export them elsewhere. Dues status itself follows the
+  table's existing "members see fellow members" SELECT policy, so a member can see their
+  own. UI: the commissioner tab's **Members & dues** toggle (`components/MembersTab.tsx`,
+  reached from the Slate tab so the phone header keeps four tabs). Verify end-to-end with
+  `cd web && node scripts/verify-dues-rls.mjs` — anon-key only, signs up two throwaway
+  accounts, asserts both roles, then deletes them via `delete_account()`.
+  **Deliberate parity exception:** web only, on the user's instruction to leave `mobile/`
+  untouched this session; the mobile port is the roster screen + the same two store
+  methods when it's wanted.
 - **Account deletion (Apple 5.1.1(v)):** the `delete_account()` RPC (called straight from
   `Dashboard.tsx` on both platforms, like the display-name/password updates) deletes the
   caller's leagues where they're the only member, promotes the longest-standing member

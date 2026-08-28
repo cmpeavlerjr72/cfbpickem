@@ -93,6 +93,27 @@ already skip polling.)
   happens as a group event (draft party on one WiFi), tell Claude beforehand to bump it
   via config push.
 
+## Pending prod migration — commissioner roster + dues (2026-08-28)
+
+`supabase/migrations/20260828180000_league_dues.sql` is **written and committed but NOT
+yet applied to prod** — this box has no DB password (the `.temp/pooler-url` the CLI
+stores carries no credentials). One command, from the repo root, with the password the
+user holds:
+
+```
+npx supabase db push --db-url "postgresql://postgres.nczxyombguocejgurwop:<DB_PASSWORD>@aws-0-us-west-2.pooler.supabase.com:5432/postgres"
+```
+
+Then prove it, from `web/` (anon key only — it creates and deletes two throwaway
+accounts, and prints no email addresses):
+
+```
+node scripts/verify-dues-rls.mjs      # expect: All checks passed.
+```
+
+Until it is applied the "Members & dues" view shows *Couldn't load the roster: Could not
+find the function public.league_roster* — nothing else in the app is affected.
+
 ## Pre-launch checks (week of Aug 24)
 
 - [ ] **Mon Aug 24**: first real automatic spread lock (hourly pg_cron →

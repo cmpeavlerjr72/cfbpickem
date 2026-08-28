@@ -58,6 +58,22 @@ export interface PoolProfile {
   isCommissioner: boolean;
 }
 
+/**
+ * One row of the commissioner's roster. The email comes from auth.users via
+ * the `league_roster` RPC, which the database refuses to anyone who isn't the
+ * commissioner of that league — never fetch or cache it anywhere else.
+ */
+export interface RosterMember {
+  playerId: string;
+  playerName: string;
+  /** null only in offline/local mode, where there are no accounts. */
+  email: string | null;
+  isCommissioner: boolean;
+  joinedAt: string;
+  duesPaid: boolean;
+  duesUpdatedAt: string | null;
+}
+
 /** One league the signed-in player belongs to (dashboard row). */
 export interface PoolMembership {
   poolId: string;
