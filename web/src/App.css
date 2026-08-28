@@ -1741,14 +1741,16 @@ section:first-child .day-header {
 
 /* ---------- Install prompt (PWA) ---------- */
 
-/* A slim bar under the header — visible only where an install can actually
-   happen (see components/InstallPrompt.tsx). */
+/* Mounted once in Root.tsx, so it banners the top of EVERY screen (sign-in,
+   league dashboard, pool app) rather than only the pages that remembered to
+   include it. Visible only where an install can actually happen — see
+   components/InstallPrompt.tsx. */
 .install-bar {
   display: flex;
   align-items: center;
   gap: 10px;
   max-width: 760px;
-  margin: 10px auto 0;
+  margin: 10px auto;
   padding: 8px 8px 8px 14px;
   background: var(--card);
   color: var(--text);

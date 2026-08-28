@@ -6,9 +6,6 @@
 import { useState } from 'react';
 import { supabase } from '../pool/supabase';
 import type { AccountContext } from './AuthGate';
-// Web-only: the mobile mirror of this screen IS a native app, so there is no
-// "add to home screen" step to offer there (CLAUDE.md parity rule).
-import { InstallPrompt } from './InstallPrompt';
 
 interface DashboardProps {
   account: AccountContext;
@@ -105,8 +102,6 @@ export function Dashboard({ account, onSelect }: DashboardProps) {
             <p className="dash-sub">Signed in as {account.displayName}</p>
           </div>
         </header>
-
-        <InstallPrompt />
 
         {error && <p className="auth-error">{error}</p>}
         {notice && <p className="dash-notice">{notice}</p>}

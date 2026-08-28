@@ -133,6 +133,18 @@ Share-sheet guide on iOS because WebKit has no install API.
   cached pick sheet or a cached score is a data bug, not a speed win.
 - Updates are automatic (`skipWaiting`/`clientsClaim` + network-first
   navigations), so a Render deploy reaches installed phones on next launch.
+- **`InstallPrompt` is mounted ONCE in `Root.tsx`**, above every screen — never
+  per-page. Mounted per-page it only appeared wherever it had been added (the
+  user found it on Leagues and nowhere else), and two instances would race the
+  same single-use install event.
+- **Android fallback:** Chrome suppresses `beforeinstallprompt` after an install
+  or a dismissal, so "no event" ≠ "cannot install". On Android with no event
+  after a 3s grace period the button still shows and opens manual ⋮ →
+  "Add to Home screen" instructions. `navigator.getInstalledRelatedApps()`
+  (needs `related_applications` in the manifest, which lists itself) hides it
+  when the WebAPK really is installed; where that API is missing we show the
+  button, since instructions to an installed user beat invisibility to an
+  uninstalled one.
 - **`beforeinstallprompt` is captured at MODULE LOAD in `src/pwa.ts`, never in a
   component effect** (regression fixed 2026-08-28 after an Android test): Chrome
   fires it before React mounts, so a late listener both misses the stash *and*

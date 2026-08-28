@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import App from './App';
 import { AuthGate, type AccountContext } from './components/AuthGate';
 import { Dashboard } from './components/Dashboard';
+import { InstallPrompt } from './components/InstallPrompt';
 import { PoolSetup } from './components/PoolSetup';
 import { localPoolStore, SupabasePoolStore } from './pool/store';
 import { supabaseEnabled } from './pool/supabase';
@@ -16,10 +17,21 @@ import type { PoolProfile } from './pool/types';
 const LAST_POOL_KEY = 'cfb-pickem:pool:last';
 
 export default function Root() {
-  if (supabaseEnabled) {
-    return <AuthGate>{(account) => <LeagueSwitcher account={account} />}</AuthGate>;
-  }
-  return <LocalGate />;
+  // The install bar is mounted ONCE here, at the app shell, so it shows on
+  // every surface — sign-in, the league dashboard and the pool app alike.
+  // Mounting it per-screen meant it only appeared on whichever page happened
+  // to include it (the user found it on Leagues and nowhere else), and two
+  // instances could race the same single-use install event.
+  return (
+    <>
+      <InstallPrompt />
+      {supabaseEnabled ? (
+        <AuthGate>{(account) => <LeagueSwitcher account={account} />}</AuthGate>
+      ) : (
+        <LocalGate />
+      )}
+    </>
+  );
 }
 
 function LeagueSwitcher({ account }: { account: AccountContext }) {

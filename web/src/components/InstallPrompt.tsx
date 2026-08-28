@@ -17,12 +17,23 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   consumeInstallPrompt,
   getInstallPrompt,
+  hasInstalledRelatedApp,
+  isAndroid,
   isIOS,
   isStandalone,
   onInstallPromptChange,
 } from '../pwa';
 
 const DISMISS_KEY = 'cfb-pickem:install:dismissed';
+
+/**
+ * How long to wait for Chrome to offer an install before falling back to
+ * manual instructions. Chrome suppresses `beforeinstallprompt` for a cooldown
+ * after a dismissal (and forever once installed), so "no event" is not
+ * "cannot install" — without this the button silently never appears, which is
+ * exactly what happened on the first Android test.
+ */
+const OFFER_GRACE_MS = 3000;
 
 /** Storage is a convenience, never a dependency: private mode throws on both. */
 function readDismissed(): boolean {
@@ -46,9 +57,28 @@ export function InstallPrompt() {
   const [offered, setOffered] = useState<boolean>(() => getInstallPrompt() != null);
   const [dismissed, setDismissed] = useState<boolean>(() => readDismissed());
   const [installed, setInstalled] = useState<boolean>(() => isStandalone());
-  const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [guide, setGuide] = useState<'ios' | 'android' | null>(null);
+  /** Chrome had its chance to offer an install and didn't. */
+  const [graceElapsed, setGraceElapsed] = useState(false);
 
   const ios = isIOS();
+  const android = isAndroid();
+
+  // Android only: start the grace clock, and ask Chrome whether our own WebAPK
+  // is already on the phone (the one signal that tells "already installed"
+  // apart from "in a dismissal cooldown").
+  useEffect(() => {
+    if (!android) return;
+    const timer = window.setTimeout(() => setGraceElapsed(true), OFFER_GRACE_MS);
+    let cancelled = false;
+    hasInstalledRelatedApp().then((yes) => {
+      if (!cancelled && yes) setInstalled(true);
+    });
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [android]);
 
   useEffect(() => {
     // Re-read on mount as well as subscribing: the event may have landed
@@ -74,17 +104,21 @@ export function InstallPrompt() {
       if (outcome === 'accepted') setInstalled(true);
       return;
     }
-    setShowIOSGuide(true);
+    // No event to hand back: show the manual path for this platform.
+    setGuide(isIOS() ? 'ios' : 'android');
   }, []);
 
   const onDismiss = useCallback(() => {
     setDismissed(true);
-    setShowIOSGuide(false);
+    setGuide(null);
     writeDismissed();
   }, []);
 
   if (installed || dismissed) return null;
-  if (!offered && !ios) return null;
+  // Android with no offer after the grace period still gets the button — it
+  // just opens instructions instead of the OS dialog.
+  const androidFallback = android && graceElapsed && !offered;
+  if (!offered && !ios && !androidFallback) return null;
 
   return (
     <>
@@ -103,13 +137,13 @@ export function InstallPrompt() {
         </button>
       </div>
 
-      {showIOSGuide && (
+      {guide && (
         <div
           className="install-sheet-scrim"
           role="dialog"
           aria-modal="true"
           aria-label="Add to Home Screen"
-          onClick={() => setShowIOSGuide(false)}
+          onClick={() => setGuide(null)}
         >
           <div className="install-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="install-sheet-head">
@@ -117,33 +151,90 @@ export function InstallPrompt() {
               <button
                 type="button"
                 className="install-bar-x"
-                onClick={() => setShowIOSGuide(false)}
+                onClick={() => setGuide(null)}
                 aria-label="Close"
               >
                 &times;
               </button>
             </div>
-            <ol className="install-sheet-steps">
-              <li>
-                <span>
-                  Tap the <b>Share</b> button in the browser toolbar
-                </span>
-                <ShareGlyph />
-              </li>
-              <li>
-                <span>
-                  Choose <b>Add to Home Screen</b>
-                </span>
-                <PlusSquareGlyph />
-              </li>
-            </ol>
-            <p className="install-sheet-note">
-              Works in Safari, and in Chrome or Edge on iOS 16.4 and later.
-            </p>
+            {guide === 'ios' ? (
+              <>
+                <ol className="install-sheet-steps">
+                  <li>
+                    <span>
+                      Tap the <b>Share</b> button in the browser toolbar
+                    </span>
+                    <ShareGlyph />
+                  </li>
+                  <li>
+                    <span>
+                      Choose <b>Add to Home Screen</b>
+                    </span>
+                    <PlusSquareGlyph />
+                  </li>
+                </ol>
+                <p className="install-sheet-note">
+                  Works in Safari, and in Chrome or Edge on iOS 16.4 and later.
+                </p>
+              </>
+            ) : (
+              <>
+                <ol className="install-sheet-steps">
+                  <li>
+                    <span>
+                      Tap the <b>⋮ menu</b> in the Chrome toolbar
+                    </span>
+                    <DotsGlyph />
+                  </li>
+                  <li>
+                    <span>
+                      Choose <b>Add to Home screen</b> (or <b>Install app</b>)
+                    </span>
+                    <PhonePlusGlyph />
+                  </li>
+                </ol>
+                <p className="install-sheet-note">
+                  Chrome only offers its one-tap install once in a while — this is the manual
+                  route. Already added it? Open Saturday Sweats from your home screen.
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}
     </>
+  );
+}
+
+/** Chrome's overflow menu: three vertical dots. */
+function DotsGlyph() {
+  return (
+    <svg className="install-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <g fill="currentColor">
+        <circle cx="12" cy="5" r="1.9" />
+        <circle cx="12" cy="12" r="1.9" />
+        <circle cx="12" cy="19" r="1.9" />
+      </g>
+    </svg>
+  );
+}
+
+/** "Add to Home screen": a phone with a plus on it. */
+function PhonePlusGlyph() {
+  return (
+    <svg className="install-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect
+        x="6"
+        y="2.5"
+        width="12"
+        height="19"
+        rx="2.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+      <path d="M12 8.5v7M8.5 12h7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }
 
