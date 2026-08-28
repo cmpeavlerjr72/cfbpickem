@@ -8,6 +8,66 @@
  * while the commissioner ships a fix mid-season.
  */
 
+/** Not in lib.dom yet — Chromium-only, and it is the whole install API. */
+export type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+};
+
+/**
+ * The install event is captured HERE, at module load, not in a component
+ * effect — Chrome fires `beforeinstallprompt` as soon as its criteria are met,
+ * which on a repeat visit beats React's first effect. Registering late cost us
+ * both halves of the feature on the user's Android test: the event was never
+ * stashed (so the in-app button had nothing to open) and it was never
+ * preventDefault'd (so Chrome showed its own install popup instead).
+ *
+ * main.tsx imports this module first, so the listener is live before the app
+ * renders. The listener is never removed: Chrome re-fires the event on a later
+ * visit if the user declined, and the button has to come back when it does.
+ */
+let deferredPrompt: BeforeInstallPromptEvent | null = null;
+const promptListeners = new Set<() => void>();
+
+function notifyPromptChange(): void {
+  for (const fn of promptListeners) fn();
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Suppresses Chrome's mini-infobar / bottom sheet so our button is the
+    // single entry point. Without it the event is not reusable later either.
+    e.preventDefault();
+    deferredPrompt = e as BeforeInstallPromptEvent;
+    notifyPromptChange();
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    notifyPromptChange();
+  });
+}
+
+/** The stashed event, or null when the browser has not offered an install. */
+export function getInstallPrompt(): BeforeInstallPromptEvent | null {
+  return deferredPrompt;
+}
+
+/** Take the event for a `prompt()` call — it is single-use once shown. */
+export function consumeInstallPrompt(): BeforeInstallPromptEvent | null {
+  const p = deferredPrompt;
+  deferredPrompt = null;
+  notifyPromptChange();
+  return p;
+}
+
+/** Subscribe to stash changes (a fire, a re-fire, or an install). */
+export function onInstallPromptChange(fn: () => void): () => void {
+  promptListeners.add(fn);
+  return () => {
+    promptListeners.delete(fn);
+  };
+}
+
 /** True when the page is running as an installed app rather than a browser tab. */
 export function isStandalone(): boolean {
   if (typeof window === 'undefined') return false;

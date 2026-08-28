@@ -121,7 +121,7 @@ channel (runtime 1.0.0 — reaches the published Play build on restart). **iOS s
 bug-hunting on their Android phone; expect mobile fix requests. Slate building stays
 web-only by design.
 
-**PWA fallback (2026-08-28):** the website now installs to a home screen as
+**PWA fallback (2026-08-28):** the website (https://saturdaysweats.com) now installs to a home screen as
 **Saturday Sweats** — standalone display, app-shell service worker, in-app
 "Install app" button (native prompt on Android/Chromium, Share-sheet guide on
 iOS). That gives iPhone members an app-like install today without waiting on

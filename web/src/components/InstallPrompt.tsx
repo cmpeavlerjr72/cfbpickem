@@ -14,13 +14,13 @@
  * so a context that cannot install never sees a button that cannot work.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { isIOS, isStandalone } from '../pwa';
-
-/** Not in lib.dom yet — Chromium-only, and it is the whole install API. */
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-};
+import {
+  consumeInstallPrompt,
+  getInstallPrompt,
+  isIOS,
+  isStandalone,
+  onInstallPromptChange,
+} from '../pwa';
 
 const DISMISS_KEY = 'cfb-pickem:install:dismissed';
 
@@ -41,7 +41,9 @@ function writeDismissed(): void {
 }
 
 export function InstallPrompt() {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
+  // The event itself is captured at module load in ../pwa (Chrome fires it
+  // before React's first effect); this only mirrors the stash into state.
+  const [offered, setOffered] = useState<boolean>(() => getInstallPrompt() != null);
   const [dismissed, setDismissed] = useState<boolean>(() => readDismissed());
   const [installed, setInstalled] = useState<boolean>(() => isStandalone());
   const [showIOSGuide, setShowIOSGuide] = useState(false);
@@ -49,36 +51,31 @@ export function InstallPrompt() {
   const ios = isIOS();
 
   useEffect(() => {
-    const onBeforeInstall = (e: Event) => {
-      // Suppress Chrome's own mini-infobar so OUR button is the single entry
-      // point; without preventDefault the event is not reusable later.
-      e.preventDefault();
-      setDeferred(e as BeforeInstallPromptEvent);
-    };
-    const onInstalled = () => {
-      setInstalled(true);
-      setDeferred(null);
-    };
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    // Re-read on mount as well as subscribing: the event may have landed
+    // between the initial state and this effect.
+    setOffered(getInstallPrompt() != null);
+    const unsubscribe = onInstallPromptChange(() => setOffered(getInstallPrompt() != null));
+    const onInstalled = () => setInstalled(true);
     window.addEventListener('appinstalled', onInstalled);
     return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      unsubscribe();
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
 
   const onInstallClick = useCallback(async () => {
-    if (deferred) {
-      await deferred.prompt();
-      const { outcome } = await deferred.userChoice;
-      // The event is single-use either way; Chrome re-fires it on a later
-      // visit if the user declined.
-      setDeferred(null);
+    // Single-use: taking it clears the stash. Chrome re-fires the event on a
+    // later visit if the user declined, and the subscription brings the bar
+    // back when it does.
+    const prompt = consumeInstallPrompt();
+    if (prompt) {
+      await prompt.prompt();
+      const { outcome } = await prompt.userChoice;
       if (outcome === 'accepted') setInstalled(true);
       return;
     }
     setShowIOSGuide(true);
-  }, [deferred]);
+  }, []);
 
   const onDismiss = useCallback(() => {
     setDismissed(true);
@@ -87,7 +84,7 @@ export function InstallPrompt() {
   }, []);
 
   if (installed || dismissed) return null;
-  if (!deferred && !ios) return null;
+  if (!offered && !ios) return null;
 
   return (
     <>

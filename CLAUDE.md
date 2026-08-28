@@ -108,7 +108,11 @@ SlateBuilder and the league dashboard — exists on both platforms.
 
 ## Hosting
 
-Production site: **https://pattersonpickem.onrender.com** — Render static site watching
+Production site: **https://saturdaysweats.com** (custom domain; the same Render
+static site also answers on its default host **https://pattersonpickem.onrender.com**).
+Always give members the custom domain — the two hostnames are **separate browser
+origins**, so an installed PWA, its service worker and its localStorage do NOT
+transfer between them. Render static site watching
 `main` on github.com/cmpeavlerjr72/cfbpickem (root dir `web`, NODE_VERSION=22). Pushing to
 main auto-deploys. `web/.env.production` (committed — public client config only) supplies
 the Supabase URL/anon key to the production build.
@@ -129,8 +133,20 @@ Share-sheet guide on iOS because WebKit has no install API.
   cached pick sheet or a cached score is a data bug, not a speed win.
 - Updates are automatic (`skipWaiting`/`clientsClaim` + network-first
   navigations), so a Render deploy reaches installed phones on next launch.
+- **`beforeinstallprompt` is captured at MODULE LOAD in `src/pwa.ts`, never in a
+  component effect** (regression fixed 2026-08-28 after an Android test): Chrome
+  fires it before React mounts, so a late listener both misses the stash *and*
+  fails to `preventDefault()`, letting Chrome's own install popup take over.
+  `main.tsx` imports `./pwa` first for the same reason. The listener stays
+  registered — Chrome re-fires after a decline.
+- Everything in the manifest is origin-relative (`start_url`/`scope`/icon `src`),
+  so the same build installs correctly on either hostname.
 - Icons are committed; regenerate with `node scripts/make-pwa-icons.mjs`
   (headless Edge screenshot of vector source — no native image dependency).
+- Render serves `manifest.webmanifest` as `binary/octet-stream` (its static
+  sites have no `_headers` file; MIME/header overrides are dashboard-only).
+  Browsers parse it anyway — verified with `Page.getAppManifest`, zero errors —
+  so this is left alone rather than converted to a render.yaml blueprint.
 - Deliberate parity exception: no mobile counterpart. `mobile/` IS a native app,
   so "add to home screen" has no meaning there.
 
