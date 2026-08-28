@@ -3,14 +3,46 @@
 // live → upcoming → final. Picks stay hidden until the slate locks at the
 // week's first kickoff (the server hides them too).
 
-import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Game, WeekData } from '../types';
 import type { GameResult, WeekResults } from '../results';
 import type { CoverOdds, PoolEntry, SlateGame, WeekSlate } from '../pool/types';
 import { coverMargin, gradeAts } from '../pool/scoring';
 import { AtsGameCard } from './AtsGameCard';
+import type { GamecastSituation } from '../gamecast';
+import { FieldStrip, LiveGamePanel, type TeamBits } from './LiveGamecast';
 import { colors } from '../theme';
+
+/** Field-visual bits built from the ESPN-joined Team objects — the join is
+ * by id everywhere, never by name (see types.ts). Team.color already
+ * carries its '#' prefix in this app's data. */
+function gamecastBits(game: Game): TeamBits {
+  return {
+    homeAbbrev: game.home?.abbrev ?? undefined,
+    awayAbbrev: game.away?.abbrev ?? undefined,
+    homeColor: game.home?.color ?? undefined,
+    awayColor: game.away?.color ?? undefined,
+    homeId: game.home?.id ?? undefined,
+    awayId: game.away?.id ?? undefined,
+    homeLogo: game.home?.logo ?? undefined,
+    awayLogo: game.away?.logo ?? undefined,
+  };
+}
+
+function gamecastSituation(result: GameResult): GamecastSituation {
+  return {
+    yardLine: result.yardLine,
+    down: result.down,
+    distance: result.distance,
+    downDistanceText: result.downDistance,
+    possessionId: result.possessionTeamId,
+    isRedZone: result.isRedZone,
+    lastPlayText: result.lastPlay,
+    attackDir: result.attackDir,
+    homeWinPct: result.homeWinPct,
+  };
+}
 
 function stateRank(result?: GameResult): number {
   if (result?.state === 'in') return 0;
@@ -44,6 +76,9 @@ export function ScoreboardTab({
     for (const g of week.games) map.set(g.id, g);
     return map;
   }, [week]);
+
+  // Gamecast break-out panel: one game open at a time.
+  const [openGamecastId, setOpenGamecastId] = useState<string | null>(null);
 
   if (!slate || !slate.published || slate.games.length === 0) {
     return (
@@ -84,7 +119,29 @@ export function ScoreboardTab({
               pickedSide={myEntry?.picks[game.id] ?? null}
               coverOdds={coverOdds[game.id] ?? null}
             />
-            {live && <LiveSituation game={game} result={result!} />}
+            {live && (
+              <>
+                <LiveSituation game={game} result={result!} />
+                <Pressable
+                  style={styles.gamecastToggle}
+                  onPress={() => setOpenGamecastId((cur) => (cur === game.id ? null : game.id))}
+                >
+                  <Text style={styles.gamecastToggleText}>
+                    {openGamecastId === game.id ? 'Hide gamecast ▲' : 'Gamecast ▼'}
+                  </Text>
+                </Pressable>
+                {openGamecastId === game.id && (
+                  <View style={styles.gamecastPanel}>
+                    <LiveGamePanel
+                      eventId={game.id}
+                      isLive
+                      situation={gamecastSituation(result!)}
+                      bits={gamecastBits(game)}
+                    />
+                  </View>
+                )}
+              </>
+            )}
             <PickChips
               game={game}
               slateGame={sg}
@@ -102,19 +159,12 @@ export function ScoreboardTab({
 }
 
 function LiveSituation({ game, result }: { game: Game; result: GameResult }) {
-  const possessionTeam =
-    result.possessionTeamId === game.home?.id
-      ? game.home
-      : result.possessionTeamId === game.away?.id
-        ? game.away
-        : null;
-  const bits: string[] = [];
-  if (possessionTeam) bits.push(`🏈 ${possessionTeam.abbrev ?? possessionTeam.school}`);
-  if (result.downDistance) bits.push(result.downDistance);
-  if (bits.length === 0 && !result.lastPlay) return null;
+  const hasSituation =
+    result.possessionTeamId != null || result.yardLine != null || !!result.downDistance;
+  if (!hasSituation && !result.lastPlay) return null;
   return (
     <View style={[styles.liveSituation, result.isRedZone && styles.redzone]}>
-      {bits.length > 0 && <Text style={styles.liveLine}>{bits.join(' · ')}</Text>}
+      {hasSituation && <FieldStrip situation={gamecastSituation(result)} bits={gamecastBits(game)} condensed />}
       {result.lastPlay && (
         <Text style={styles.lastPlay} numberOfLines={2}>
           {result.lastPlay}
@@ -250,14 +300,32 @@ const styles = StyleSheet.create({
   redzone: {
     borderColor: colors.red,
   },
-  liveLine: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.text,
-  },
   lastPlay: {
     fontSize: 12,
     color: colors.textDim,
+  },
+  gamecastToggle: {
+    alignSelf: 'flex-start',
+    marginHorizontal: 16,
+    marginTop: -2,
+    marginBottom: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  gamecastToggleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.navyLight,
+  },
+  gamecastPanel: {
+    marginHorizontal: 16,
+    marginTop: -4,
+    marginBottom: 8,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    padding: 12,
   },
   chips: {
     flexDirection: 'row',

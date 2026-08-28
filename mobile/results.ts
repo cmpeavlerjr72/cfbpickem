@@ -31,6 +31,15 @@ export interface GameResult {
   downDistance: string | null;
   isRedZone: boolean;
   lastPlay: string | null;
+  /** Absolute ball spot, 0-100, home goal line = 0 (see gamecast.ts). */
+  yardLine: number | null;
+  down: number | null;
+  distance: number | null;
+  /** -1 = attacking yardLine 0 (home goal line), +1 = attacking 100. Inferred
+   * from the last play's movement; null on any ambiguity. */
+  attackDir: -1 | 1 | null;
+  /** ESPN's live win model, P(home) in 0-100. */
+  homeWinPct: number | null;
   /** ESPN's line for the game (pregame). */
   odds: EspnOdds | null;
 }
@@ -45,6 +54,25 @@ interface CachedWeekResults {
   fetchedAt: string;
   allFinal: boolean;
   results: WeekResults;
+}
+
+/**
+ * Direction of attack from the last play's movement. The scoreboard situation
+ * carries no yards-to-endzone, so this is inferred: positive yardage that
+ * moved the absolute spot DOWN means the offense attacks the home goal line.
+ * Returns null on any ambiguity (no gain, spot unchanged, possession changed
+ * on the play) — callers must render without an arrow in that case.
+ */
+function inferAttackDir(lastPlay: any, possessionId: string | null): -1 | 1 | null {
+  const s = typeof lastPlay?.start?.yardLine === 'number' ? lastPlay.start.yardLine : null;
+  const e = typeof lastPlay?.end?.yardLine === 'number' ? lastPlay.end.yardLine : null;
+  const y = typeof lastPlay?.statYardage === 'number' ? lastPlay.statYardage : null;
+  const playTeam = lastPlay?.team?.id != null ? String(lastPlay.team.id) : null;
+  if (s === null || e === null || y === null) return null;
+  if (y === 0 || e === s) return null;
+  if (possessionId && playTeam && possessionId !== playTeam) return null;
+  const moved: -1 | 1 = e < s ? -1 : 1;
+  return y > 0 ? moved : moved === -1 ? 1 : -1;
 }
 
 function parseScoreboard(json: unknown): WeekResults {
@@ -75,6 +103,8 @@ function parseScoreboard(json: unknown): WeekResults {
     const rawOdds = comp.odds?.[0] ?? null;
     const spread = rawOdds ? Number(rawOdds.spread ?? rawOdds.pointSpread) : NaN;
     const overUnder = rawOdds ? Number(rawOdds.overUnder ?? rawOdds.total) : NaN;
+    const possessionTeamId = situation.possession != null ? String(situation.possession) : null;
+    const winPct = situation.lastPlay?.probability?.homeWinPercentage;
     results[event.id] = {
       gameId: event.id,
       statusName: statusType.name ?? 'STATUS_SCHEDULED',
@@ -86,10 +116,15 @@ function parseScoreboard(json: unknown): WeekResults {
       winnerTeamId,
       period: comp.status?.period ?? event.status?.period ?? null,
       clock: comp.status?.displayClock ?? event.status?.displayClock ?? null,
-      possessionTeamId: situation.possession != null ? String(situation.possession) : null,
+      possessionTeamId,
       downDistance: situation.downDistanceText ?? situation.shortDownDistanceText ?? null,
       isRedZone: situation.isRedZone === true,
       lastPlay: situation.lastPlay?.text ?? null,
+      yardLine: typeof situation.yardLine === 'number' ? situation.yardLine : null,
+      down: typeof situation.down === 'number' ? situation.down : null,
+      distance: typeof situation.distance === 'number' ? situation.distance : null,
+      attackDir: inferAttackDir(situation.lastPlay, possessionTeamId),
+      homeWinPct: typeof winPct === 'number' ? 100 * winPct : null,
       odds: rawOdds
         ? {
             details: rawOdds.details ?? null,
