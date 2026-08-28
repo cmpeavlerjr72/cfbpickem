@@ -1779,16 +1779,27 @@ section:first-child .day-header {
   font-weight: 700;
 }
 
+/* Deliberately set apart from the CTA: this one snoozes the banner for a
+   week, and it must not read as "close" for the button beside it. */
 .install-bar-x {
   flex: 0 0 auto;
   width: 34px;
   height: 34px;
+  margin-left: 2px;
   border: 0;
-  border-radius: 999px;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
   background: transparent;
   color: var(--text-dim);
   font-size: 22px;
   line-height: 1;
+}
+
+/* Inside the instruction sheet the same glyph is a plain close — no border,
+   and it records nothing. */
+.install-sheet-head .install-bar-x {
+  margin-left: 0;
+  border-left: 0;
 }
 
 @media (max-width: 480px) {

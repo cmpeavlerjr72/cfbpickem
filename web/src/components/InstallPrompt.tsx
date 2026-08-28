@@ -24,7 +24,10 @@ import {
   onInstallPromptChange,
 } from '../pwa';
 
-const DISMISS_KEY = 'cfb-pickem:install:dismissed';
+const SNOOZE_KEY = 'cfb-pickem:install:snoozeUntil';
+/** The old boolean meant "never show again" — deliberately retired below. */
+const LEGACY_DISMISS_KEY = 'cfb-pickem:install:dismissed';
+const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * How long to wait for Chrome to offer an install before falling back to
@@ -35,17 +38,40 @@ const DISMISS_KEY = 'cfb-pickem:install:dismissed';
  */
 const OFFER_GRACE_MS = 3000;
 
-/** Storage is a convenience, never a dependency: private mode throws on both. */
-function readDismissed(): boolean {
+/**
+ * Storage is a convenience, never a dependency: private mode throws on both.
+ *
+ * This is a SNOOZE, not a dismissal. These are league members who want the app
+ * on their phone; hiding the banner forever because they tapped an X once is
+ * the wrong default. Only the X on the banner writes it — reading the
+ * instructions never does, since opening the guide is the strongest
+ * install-intent signal we have.
+ */
+function readSnoozed(): boolean {
   try {
-    return window.localStorage.getItem(DISMISS_KEY) === '1';
+    // The old flag meant "never show again". Retire it on sight so anyone it
+    // silenced gets the banner back.
+    window.localStorage.removeItem(LEGACY_DISMISS_KEY);
+    const raw = window.localStorage.getItem(SNOOZE_KEY);
+    if (!raw) return false;
+    const until = Number(raw);
+    if (!Number.isFinite(until)) {
+      window.localStorage.removeItem(SNOOZE_KEY);
+      return false;
+    }
+    if (Date.now() >= until) {
+      window.localStorage.removeItem(SNOOZE_KEY);
+      return false;
+    }
+    return true;
   } catch {
     return false;
   }
 }
-function writeDismissed(): void {
+
+function writeSnooze(): void {
   try {
-    window.localStorage.setItem(DISMISS_KEY, '1');
+    window.localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_MS));
   } catch {
     /* Blocked storage just means the bar comes back next visit. */
   }
@@ -55,7 +81,7 @@ export function InstallPrompt() {
   // The event itself is captured at module load in ../pwa (Chrome fires it
   // before React's first effect); this only mirrors the stash into state.
   const [offered, setOffered] = useState<boolean>(() => getInstallPrompt() != null);
-  const [dismissed, setDismissed] = useState<boolean>(() => readDismissed());
+  const [snoozed, setSnoozed] = useState<boolean>(() => readSnoozed());
   const [installed, setInstalled] = useState<boolean>(() => isStandalone());
   const [guide, setGuide] = useState<'ios' | 'android' | null>(null);
   /** Chrome had its chance to offer an install and didn't. */
@@ -101,20 +127,36 @@ export function InstallPrompt() {
     if (prompt) {
       await prompt.prompt();
       const { outcome } = await prompt.userChoice;
-      if (outcome === 'accepted') setInstalled(true);
+      if (outcome === 'accepted') {
+        setInstalled(true);
+      } else {
+        // Declining the OS dialog is a real "not now" — but capped at the same
+        // 7 days, not forever.
+        setSnoozed(true);
+        writeSnooze();
+      }
       return;
     }
     // No event to hand back: show the manual path for this platform.
     setGuide(isIOS() ? 'ios' : 'android');
   }, []);
 
-  const onDismiss = useCallback(() => {
-    setDismissed(true);
+  /**
+   * ONLY the X on the banner snoozes. Closing the instructions does not —
+   * someone who opened the guide and walked away to think about it is the most
+   * likely installer we have, and the banner has to be waiting when they come
+   * back (this session and later ones).
+   */
+  const onSnooze = useCallback(() => {
+    setSnoozed(true);
     setGuide(null);
-    writeDismissed();
+    writeSnooze();
   }, []);
 
-  if (installed || dismissed) return null;
+  /** Close the overlay only — never records anything. */
+  const closeGuide = useCallback(() => setGuide(null), []);
+
+  if (installed || snoozed) return null;
   // Android with no offer after the grace period still gets the button — it
   // just opens instructions instead of the OS dialog.
   const androidFallback = android && graceElapsed && !offered;
@@ -130,8 +172,9 @@ export function InstallPrompt() {
         <button
           type="button"
           className="install-bar-x"
-          onClick={onDismiss}
-          aria-label="Dismiss install prompt"
+          onClick={onSnooze}
+          aria-label="Not now — hide this for a week"
+          title="Not now"
         >
           &times;
         </button>
@@ -143,7 +186,7 @@ export function InstallPrompt() {
           role="dialog"
           aria-modal="true"
           aria-label="Add to Home Screen"
-          onClick={() => setGuide(null)}
+          onClick={closeGuide}
         >
           <div className="install-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="install-sheet-head">
@@ -151,8 +194,8 @@ export function InstallPrompt() {
               <button
                 type="button"
                 className="install-bar-x"
-                onClick={() => setGuide(null)}
-                aria-label="Close"
+                onClick={closeGuide}
+                aria-label="Close these instructions"
               >
                 &times;
               </button>
@@ -175,6 +218,8 @@ export function InstallPrompt() {
                 </ol>
                 <p className="install-sheet-note">
                   Works in Safari, and in Chrome or Edge on iOS 16.4 and later.
+                  <br />
+                  Already added it? You’re all set — open it from your home screen.
                 </p>
               </>
             ) : (
@@ -195,7 +240,9 @@ export function InstallPrompt() {
                 </ol>
                 <p className="install-sheet-note">
                   Chrome only offers its one-tap install once in a while — this is the manual
-                  route. Already added it? Open Saturday Sweats from your home screen.
+                  route.
+                  <br />
+                  Already added it? You’re all set — open it from your home screen.
                 </p>
               </>
             )}

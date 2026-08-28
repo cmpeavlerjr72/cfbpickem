@@ -137,6 +137,18 @@ Share-sheet guide on iOS because WebKit has no install API.
   per-page. Mounted per-page it only appeared wherever it had been added (the
   user found it on Leagues and nowhere else), and two instances would race the
   same single-use install event.
+- **Reading the instructions is never a dismissal.** Closing the iOS/Android
+  guide (X, tap-outside, backgrounding) records nothing — opening it is the
+  strongest install-intent signal there is, and treating it as "no thanks" is
+  what made the banner vanish on the user's iPhone. Only the X **on the
+  banner** hides it, and that is a **7-day snooze**
+  (`cfb-pickem:install:snoozeUntil`, try/catch'd), never permanent; a declined
+  Chromium OS dialog gets the same 7 days. The old permanent
+  `:install:dismissed` flag is deleted on sight.
+- iOS cannot tell whether the app is already installed from a Safari tab
+  (`getInstalledRelatedApps` is Chromium-only), so an installed iOS member may
+  still see the banner while browsing. The overlay says "Already added it?
+  You're all set" and we leave it there — do not get clever.
 - **Android fallback:** Chrome suppresses `beforeinstallprompt` after an install
   or a dismissal, so "no event" ≠ "cannot install". On Android with no event
   after a 3s grace period the button still shows and opens manual ⋮ →
