@@ -113,6 +113,27 @@ Production site: **https://pattersonpickem.onrender.com** — Render static site
 main auto-deploys. `web/.env.production` (committed — public client config only) supplies
 the Supabase URL/anon key to the production build.
 
+### PWA — the website installs as "Saturday Sweats" (2026-08-28)
+
+The web app is installable to a phone home screen, which is the distribution path
+while iOS is stuck in App Review. `public/manifest.webmanifest` (name "Saturday
+Sweats", home-screen label "Sat Sweats" — iOS truncates past ~12 chars),
+`src/sw.ts` (the service worker) and `src/pwa.ts` (registration) are the whole of
+it; `components/InstallPrompt.tsx` is the in-app "Install app" bar, which shows a
+Share-sheet guide on iOS because WebKit has no install API.
+
+- **The worker caches the app shell and NOTHING else.** Only two routes are
+  registered — workbox's precache (exact hashed same-origin URLs) and a
+  network-first navigation route — so Supabase, ESPN and Kalshi fall through to
+  the network untouched. Never add `setDefaultHandler` or runtime caching: a
+  cached pick sheet or a cached score is a data bug, not a speed win.
+- Updates are automatic (`skipWaiting`/`clientsClaim` + network-first
+  navigations), so a Render deploy reaches installed phones on next launch.
+- Icons are committed; regenerate with `node scripts/make-pwa-icons.mjs`
+  (headless Edge screenshot of vector source — no native image dependency).
+- Deliberate parity exception: no mobile counterpart. `mobile/` IS a native app,
+  so "add to home screen" has no meaning there.
+
 ## Supabase (backend for the pool)
 
 - Project ref `nczxyombguocejgurwop` (region **us-west-2**). Client creds in

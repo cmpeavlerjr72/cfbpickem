@@ -8,6 +8,7 @@ import type { CoverOdds, PickSide, PoolEntry, PoolProfile, PoolSettings, WeekSla
 import { DEFAULT_SETTINGS } from './pool/types';
 import type { PoolStore } from './pool/store';
 import { fetchCoverOddsForSlate } from './pool/kalshi';
+import { InstallPrompt } from './components/InstallPrompt';
 import { PickSheet } from './components/PickSheet';
 import { SlateBuilder } from './components/SlateBuilder';
 import { ScoreboardTab } from './components/ScoreboardTab';
@@ -353,6 +354,8 @@ export default function App({
           </nav>
         </div>
       </header>
+
+      <InstallPrompt />
 
       <div className="week-picker">
         <div className="week-picker-inner">

@@ -3,8 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover lets the page paint under the notch and home
+         indicator; the sticky header and fixed pick bar pay it back with
+         env(safe-area-inset-*) padding in App.css. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>CFB Pick'em</title>
+
+    <!-- PWA: installable shell. theme-color is --navy, what the header paints. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0f2440" />
+    <meta name="application-name" content="Saturday Sweats" />
+    <meta
+      name="description"
+      content="Your league's college football pick'em — make picks, watch the board, sweat every Saturday."
+    />
+
+    <!-- iOS installability. black-translucent puts the status bar OVER the
+         page, so the header's safe-area padding is load-bearing, not cosmetic.
+         The home-screen label comes from apple-mobile-web-app-title, which iOS
+         truncates around 12 characters — hence "Sat Sweats", matching
+         short_name in the manifest. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Sat Sweats" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
   </head>
   <body>
     <div id="root"></div>
