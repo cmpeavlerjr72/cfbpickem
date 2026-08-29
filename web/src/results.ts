@@ -15,6 +15,13 @@ export interface EspnOdds {
   provider: string | null;
 }
 
+/** Stadium-level kickoff-window forecast (ESPN/AccuWeather-sourced). */
+export interface GameWeather {
+  temp: number | null;
+  text: string;
+  conditionId: number | null;
+}
+
 export interface GameResult {
   gameId: string;
   statusName: string;
@@ -24,6 +31,11 @@ export interface GameResult {
   homeScore: number | null;
   awayScore: number | null;
   winnerTeamId: string | null;
+  /** Populated by ESPN within ~5 days of kickoff; null otherwise or on any
+   * parse gap. Most useful pregame — see AtsGameCard's weather chip. */
+  weather: GameWeather | null;
+  /** Dome/enclosed venue — weather chip shows "Dome" instead when true. */
+  indoor: boolean;
   // Live situation (in-progress games only; see monte-site's ESPN notes)
   period: number | null;
   clock: string | null;
@@ -105,6 +117,22 @@ function parseScoreboard(json: unknown): WeekResults {
     const overUnder = rawOdds ? Number(rawOdds.overUnder ?? rawOdds.total) : NaN;
     const possessionTeamId = situation.possession != null ? String(situation.possession) : null;
     const winPct = situation.lastPlay?.probability?.homeWinPercentage;
+    const indoor = comp.venue?.indoor === true;
+    const rawWeather = event.weather;
+    let weather: GameWeather | null = null;
+    if (rawWeather && typeof rawWeather === 'object') {
+      const temp = typeof rawWeather.temperature === 'number' ? rawWeather.temperature : null;
+      const text = typeof rawWeather.displayValue === 'string' ? rawWeather.displayValue : '';
+      const rawConditionId = rawWeather.conditionId;
+      let conditionId: number | null = null;
+      if (typeof rawConditionId === 'number' && Number.isFinite(rawConditionId)) {
+        conditionId = rawConditionId;
+      } else if (typeof rawConditionId === 'string' && rawConditionId.trim() !== '') {
+        const parsed = Number(rawConditionId);
+        conditionId = Number.isFinite(parsed) ? parsed : null;
+      }
+      weather = { temp, text, conditionId };
+    }
     results[event.id] = {
       gameId: event.id,
       statusName: statusType.name ?? 'STATUS_SCHEDULED',
@@ -114,6 +142,8 @@ function parseScoreboard(json: unknown): WeekResults {
       homeScore: home?.score != null ? Number(home.score) : null,
       awayScore: away?.score != null ? Number(away.score) : null,
       winnerTeamId,
+      weather,
+      indoor,
       period: comp.status?.period ?? event.status?.period ?? null,
       clock: comp.status?.displayClock ?? event.status?.displayClock ?? null,
       possessionTeamId,

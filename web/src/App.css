@@ -203,6 +203,10 @@ section:first-child .day-header {
   margin-left: auto;
 }
 
+.weather-chip {
+  white-space: nowrap;
+}
+
 .team-row {
   display: flex;
   align-items: center;
