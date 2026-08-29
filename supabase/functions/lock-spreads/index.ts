@@ -41,19 +41,41 @@ Deno.serve(async () => {
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   let locked = 0;
+  // Per-slate outcome, in the response. The original blind {checked, locked}
+  // counts hid a whole week of the 2026 week-0 lock never firing server-side
+  // (found 2026-08-29: every skip and every error was silent, so the cron
+  // could fail forever and the response still read as healthy).
+  const detail: Array<Record<string, unknown>> = [];
   const espnCache = new Map<string, Record<string, number>>();
 
   for (const slate of slates ?? []) {
+    const d: Record<string, unknown> = {
+      pool: slate.pool_id, week: slate.week, season_type: slate.season_type,
+    };
+    detail.push(d);
     try {
       const games = (slate.games ?? []) as SlateGame[];
-      if (games.length === 0) continue;
+      if (games.length === 0) { d.action = 'skip_empty_slate'; continue; }
 
-      const { data: rows } = await db
+      const { data: rows, error: gErr } = await db
         .from('games')
         .select('id, kickoff')
         .in('id', games.map((g) => g.gameId));
+      if (gErr) { d.action = 'error_games_read'; d.error = gErr.message; continue; }
       const kicks = (rows ?? []).map((r) => r.kickoff as string).sort();
-      if (kicks.length === 0 || Date.now() < spreadLockTime(kicks[0])) continue;
+      if (kicks.length === 0) {
+        d.action = 'skip_no_game_rows';
+        d.game_ids = games.map((g) => g.gameId);
+        continue;
+      }
+      if (kicks.length < games.length) {
+        d.missing_game_rows = games.length - kicks.length;
+      }
+      if (Date.now() < spreadLockTime(kicks[0])) {
+        d.action = 'waiting';
+        d.locks_at = new Date(spreadLockTime(kicks[0])).toISOString();
+        continue;
+      }
 
       // App week 0 is carved out of ESPN's merged week 1 (ESPN has no week
       // 0) — see data/split-week-zero.mjs and WeekData.espnWeek.
@@ -83,19 +105,26 @@ Deno.serve(async () => {
       const updated = games.map((g) =>
         lines![g.gameId] != null ? { ...g, homeSpread: lines![g.gameId] } : g,
       );
-      const { error: upErr } = await db
+      const { data: upRows, error: upErr } = await db
         .from('slates')
         .update({ games: updated, spreads_locked_at: new Date().toISOString() })
         .eq('pool_id', slate.pool_id)
         .eq('season', slate.season)
         .eq('season_type', slate.season_type)
         .eq('week', slate.week)
-        .is('spreads_locked_at', null); // never overwrite a lock that raced us
-      if (!upErr) locked++;
-    } catch {
-      // one slate failing must not block the rest
+        .is('spreads_locked_at', null) // never overwrite a lock that raced us
+        .select('pool_id');
+      if (upErr) { d.action = 'error_update'; d.error = upErr.message; continue; }
+      if (!upRows?.length) { d.action = 'update_matched_nothing'; continue; }
+      locked++;
+      d.action = 'locked';
+      d.lines_found = Object.keys(lines!).length;
+    } catch (err) {
+      // one slate failing must not block the rest — but it must be SAID
+      d.action = 'error_thrown';
+      d.error = err instanceof Error ? err.message : String(err);
     }
   }
 
-  return Response.json({ checked: slates?.length ?? 0, locked });
+  return Response.json({ checked: slates?.length ?? 0, locked, detail });
 });
