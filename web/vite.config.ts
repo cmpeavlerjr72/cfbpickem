@@ -15,6 +15,18 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.ts',
       registerType: 'autoUpdate',
+      // KILL SWITCH (2026-08-28, ported from monte_site the same night): ships
+      // a sw.js whose only job is to UNREGISTER any existing worker and reload
+      // its clients. The sibling app's identical worker architecture stranded
+      // the owner's phone fully blank TWICE in one evening of rapid deploys —
+      // registration alive with broken state, incognito always fine. League
+      // members can't be asked to dig through site settings, so this app gets
+      // the cure BEFORE its first stranding. Installability and the manifest
+      // stay; the app runs as an online site — the worker only ever cached the
+      // shell (live picks/scores were always network, by the rule above).
+      // Re-introduce a caching worker only with a reviewed design that answers
+      // the stranding mode.
+      selfDestroying: true,
       // The manifest is hand-authored at public/manifest.webmanifest and
       // linked from index.html, so the plugin must not emit a second one.
       manifest: false,

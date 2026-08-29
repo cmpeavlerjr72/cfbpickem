@@ -126,13 +126,20 @@ Sweats", home-screen label "Sat Sweats" — iOS truncates past ~12 chars),
 it; `components/InstallPrompt.tsx` is the in-app "Install app" bar, which shows a
 Share-sheet guide on iOS because WebKit has no install API.
 
-- **The worker caches the app shell and NOTHING else.** Only two routes are
-  registered — workbox's precache (exact hashed same-origin URLs) and a
-  network-first navigation route — so Supabase, ESPN and Kalshi fall through to
-  the network untouched. Never add `setDefaultHandler` or runtime caching: a
-  cached pick sheet or a cached score is a data bug, not a speed win.
-- Updates are automatic (`skipWaiting`/`clientsClaim` + network-first
-  navigations), so a Render deploy reaches installed phones on next launch.
+- **The service worker is a SELF-DESTROYING kill switch** (`selfDestroying:
+  true` in `web/vite.config.ts`, 2026-08-28): the shipped `sw.js` only
+  unregisters any existing worker and reloads its clients. The caching worker
+  it replaced (src/sw.ts, kept in-tree for reference) stranded the owner's
+  phone fully blank twice in one evening on the sibling monte_site app —
+  registration alive with broken state across rapid deploys, incognito always
+  fine — and league members can't be asked to dig through site settings.
+  Installability and the manifest are unaffected; the app simply runs as an
+  online site (the worker only ever cached the shell — live picks/scores were
+  always network). Do NOT remove `selfDestroying` except alongside a reviewed
+  worker redesign that answers the stranding mode.
+- src/sw.ts's old rule stands if a worker ever returns: shell only, never
+  `setDefaultHandler`, never runtime caching — a cached pick sheet or a cached
+  score is a data bug, not a speed win.
 - **`InstallPrompt` is mounted ONCE in `Root.tsx`**, above every screen — never
   per-page. Mounted per-page it only appeared wherever it had been added (the
   user found it on Leagues and nowhere else), and two instances would race the
