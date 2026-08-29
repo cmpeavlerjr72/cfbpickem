@@ -33,6 +33,7 @@ import type { LayoutChangeEvent } from 'react-native';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { AttackDir, CurrentDrive, GamecastSituation, GameSummaryLite, ProbPoint } from '../gamecast';
 import { useGameProbabilities, useGameSummary } from '../gamecast';
+import type { PickType } from '../pool/types';
 import { colors } from '../theme';
 
 const UNIT_W = 120; // total width units, matches web's viewBox
@@ -308,7 +309,10 @@ function DriveField({
 
 /* -------------------------------- ProbChart ------------------------------- */
 
-type ProbMode = 'win' | 'cover' | 'over';
+// The chart follows the pool's pick type — never a user toggle, and the
+// total-over% series is never shown either way: SU pools ask "who wins", ATS
+// pools ask "who covers", and over/under isn't a pick either league makes.
+type ProbMode = 'win' | 'cover';
 
 // Flat percentage coordinate space over a fixed-height plot (no SVG viewBox,
 // no onLayout needed — a fixed pixel height plus percentage children resolve
@@ -328,15 +332,19 @@ function ProbChart({
   points,
   summary,
   bits,
+  pickType,
 }: {
   points: ProbPoint[];
   summary: GameSummaryLite | null;
   bits: TeamBits;
+  pickType: PickType;
 }) {
-  const [mode, setMode] = useState<ProbMode>('win');
   const hasCover = points.some((p) => p.coverHome !== undefined);
-  const hasOver = points.some((p) => p.overPct !== undefined);
-  const effMode: ProbMode = mode === 'cover' && !hasCover ? 'win' : mode === 'over' && !hasOver ? 'win' : mode;
+  // ATS pools want cover%; SU pools want win%. ESPN's core-API probabilities
+  // feed doesn't always carry spreadCoverProbHome even on lined games (only
+  // win% is guaranteed) — fall back to the win% series, correctly labeled,
+  // rather than an empty chart.
+  const effMode: ProbMode = pickType === 'ats' && hasCover ? 'cover' : 'win';
 
   const n = points.length;
   const barWidthPct = (PLOT_RIGHT_PCT - PLOT_LEFT_PCT) / Math.max(n, 1);
@@ -344,7 +352,7 @@ function ProbChart({
   const bars = useMemo(() => {
     const out: { i: number; left: number; top: number; height: number; home: boolean }[] = [];
     points.forEach((p, i) => {
-      const v = effMode === 'win' ? p.homeWin : effMode === 'cover' ? p.coverHome : p.overPct;
+      const v = effMode === 'win' ? p.homeWin : p.coverHome;
       if (v === undefined) return;
       const y = yPct(v);
       const top = v >= 50 ? y : MID_PCT;
@@ -377,24 +385,20 @@ function ProbChart({
   const last = points[points.length - 1];
   const homeColor = bits.homeColor ?? colors.navy;
   const awayColor = bits.awayColor ?? colors.textDim;
-  const overColor = colors.navyLight;
 
   let leaderLogo: string | undefined;
   let readout = '';
-  let caption = 'WIN PROBABILITY';
+  let caption = 'Win probability';
   if (last) {
-    if (effMode === 'win') {
-      const homeUp = last.homeWin >= 50;
-      leaderLogo = homeUp ? bits.homeLogo : bits.awayLogo;
-      readout = `${(homeUp ? bits.homeAbbrev : bits.awayAbbrev) ?? ''} ${(homeUp ? last.homeWin : 100 - last.homeWin).toFixed(1)}%`;
-    } else if (effMode === 'cover' && last.coverHome !== undefined) {
-      caption = `COVER PROBABILITY${summary?.pickDetails ? ` · ${summary.pickDetails}` : ''}`;
+    if (effMode === 'cover' && last.coverHome !== undefined) {
+      caption = `Cover probability${summary?.pickDetails ? ` · ${summary.pickDetails}` : ''}`;
       const homeUp = last.coverHome >= 50;
       leaderLogo = homeUp ? bits.homeLogo : bits.awayLogo;
       readout = `${(homeUp ? bits.homeAbbrev : bits.awayAbbrev) ?? ''} ${(homeUp ? last.coverHome : 100 - last.coverHome).toFixed(1)}%`;
-    } else if (effMode === 'over' && last.overPct !== undefined) {
-      caption = `OVER${summary?.overUnder !== undefined ? ` ${summary.overUnder}` : ''} PROBABILITY`;
-      readout = `${last.overPct.toFixed(1)}%`;
+    } else {
+      const homeUp = last.homeWin >= 50;
+      leaderLogo = homeUp ? bits.homeLogo : bits.awayLogo;
+      readout = `${(homeUp ? bits.homeAbbrev : bits.awayAbbrev) ?? ''} ${(homeUp ? last.homeWin : 100 - last.homeWin).toFixed(1)}%`;
     }
   }
 
@@ -406,41 +410,17 @@ function ProbChart({
           {leaderLogo && <Image source={{ uri: leaderLogo }} style={styles.probReadoutLogo} resizeMode="contain" />}
           <Text style={styles.probReadoutText}>{readout}</Text>
         </View>
-        <View style={styles.probToggle}>
-          <Pressable
-            style={[styles.probToggleBtn, effMode === 'win' && styles.probToggleBtnOn]}
-            onPress={() => setMode('win')}
-          >
-            <Text style={[styles.probToggleText, effMode === 'win' && styles.probToggleTextOn]}>Win %</Text>
-          </Pressable>
-          {hasCover && (
-            <Pressable
-              style={[styles.probToggleBtn, effMode === 'cover' && styles.probToggleBtnOn]}
-              onPress={() => setMode('cover')}
-            >
-              <Text style={[styles.probToggleText, effMode === 'cover' && styles.probToggleTextOn]}>Cover %</Text>
-            </Pressable>
-          )}
-          {hasOver && (
-            <Pressable
-              style={[styles.probToggleBtn, effMode === 'over' && styles.probToggleBtnOn]}
-              onPress={() => setMode('over')}
-            >
-              <Text style={[styles.probToggleText, effMode === 'over' && styles.probToggleTextOn]}>Over %</Text>
-            </Pressable>
-          )}
-        </View>
       </View>
 
       <View style={styles.probPlot}>
-        {effMode !== 'over' && bits.homeLogo && (
+        {bits.homeLogo && (
           <Image
             source={{ uri: bits.homeLogo }}
             style={[styles.probPlotLogo, { top: `${PAD_TOP_PCT}%` }]}
             resizeMode="contain"
           />
         )}
-        {effMode !== 'over' && bits.awayLogo && (
+        {bits.awayLogo && (
           <Image
             source={{ uri: bits.awayLogo }}
             style={[styles.probPlotLogo, { top: `${100 - PAD_BOTTOM_PCT}%`, marginTop: -20 }]}
@@ -471,7 +451,7 @@ function ProbChart({
                 width: `${barWidthPct}%`,
                 top: `${b.top}%`,
                 height: `${b.height}%`,
-                backgroundColor: effMode === 'over' ? overColor : b.home ? homeColor : awayColor,
+                backgroundColor: b.home ? homeColor : awayColor,
               },
             ]}
           />
@@ -589,11 +569,14 @@ export function LiveGamePanel({
   isLive,
   situation,
   bits,
+  pickType,
 }: {
   eventId: string;
   isLive: boolean;
   situation?: GamecastSituation;
   bits: TeamBits;
+  /** Which probability series the chart shows — see ProbChart. */
+  pickType: PickType;
 }) {
   const summary = useGameSummary(eventId, isLive);
   const probs = useGameProbabilities(eventId, isLive);
@@ -624,7 +607,9 @@ export function LiveGamePanel({
         </View>
       )}
 
-      {probs && probs.length > 0 && <ProbChart points={probs} summary={summary} bits={bits} />}
+      {probs && probs.length > 0 && (
+        <ProbChart points={probs} summary={summary} bits={bits} pickType={pickType} />
+      )}
 
       {drives.length > 0 && <DriveLog drives={drives} bits={bits} isLive={isLive} />}
 
@@ -821,31 +806,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     color: colors.text,
-  },
-  probToggle: {
-    marginLeft: 'auto',
-    flexDirection: 'row',
-    gap: 6,
-  },
-  probToggleBtn: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    backgroundColor: colors.card,
-  },
-  probToggleBtnOn: {
-    backgroundColor: colors.navy,
-    borderColor: colors.navy,
-  },
-  probToggleText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textDim,
-  },
-  probToggleTextOn: {
-    color: '#fff',
   },
   probPlot: {
     height: 200,

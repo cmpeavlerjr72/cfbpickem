@@ -3,7 +3,7 @@
 // week's first kickoff (no late-addition picks). `overriding` = commissioner
 // editing another member's sheet, which ignores the lock.
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Game, WeekData } from '../types';
 import type { WeekResults } from '../results';
 import { isGameLocked } from '../results';
@@ -42,6 +42,39 @@ export function PickSheet({
     for (const g of week.games) map.set(g.id, g);
     return map;
   }, [week]);
+
+  // Tiebreaker score inputs use local string state so the field can go
+  // empty while typing. Deriving `value` straight from a `number | null`
+  // (the old code) breaks on the very first digit: onTiebreaker fills the
+  // untouched side with 0 (see App.tsx handleTiebreaker), which flashes a
+  // "0" into that input and produces leading-zero artifacts ("07") the
+  // next time someone types into it. Re-sync only when the tiebreaker game
+  // or the player being edited changes (data load, week switch,
+  // commissioner switching whose sheet they're editing) — never on every
+  // keystroke, or the same 0 fill-in would clobber what's being typed.
+  const tbGameId = slate?.games.find((sg) => sg.isTiebreaker)?.gameId ?? null;
+  const [awayText, setAwayText] = useState(() =>
+    entry.tiebreaker?.away != null ? String(entry.tiebreaker.away) : '',
+  );
+  const [homeText, setHomeText] = useState(() =>
+    entry.tiebreaker?.home != null ? String(entry.tiebreaker.home) : '',
+  );
+  useEffect(() => {
+    setAwayText(entry.tiebreaker?.away != null ? String(entry.tiebreaker.away) : '');
+    setHomeText(entry.tiebreaker?.home != null ? String(entry.tiebreaker.home) : '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tbGameId, entry.playerId]);
+
+  const commitAway = (raw: string) => {
+    const digits = raw.replace(/\D/g, '');
+    setAwayText(digits);
+    onTiebreaker(homeText === '' ? null : Number(homeText), digits === '' ? null : Number(digits));
+  };
+  const commitHome = (raw: string) => {
+    const digits = raw.replace(/\D/g, '');
+    setHomeText(digits);
+    onTiebreaker(digits === '' ? null : Number(digits), awayText === '' ? null : Number(awayText));
+  };
 
   if (!slate || !slate.published || slate.games.length === 0) {
     return (
@@ -153,34 +186,24 @@ export function PickSheet({
               <label>
                 <span>{tbEntry.game.away?.abbrev ?? tbEntry.game.away?.school}</span>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   disabled={tbLocked}
-                  value={entry.tiebreaker?.away ?? ''}
-                  onChange={(e) =>
-                    onTiebreaker(
-                      entry.tiebreaker?.home ?? null,
-                      e.target.value === '' ? null : Number(e.target.value),
-                    )
-                  }
+                  value={awayText}
+                  onChange={(e) => commitAway(e.target.value)}
                 />
               </label>
               <span className="tb-dash">–</span>
               <label>
                 <span>{tbEntry.game.home?.abbrev ?? tbEntry.game.home?.school}</span>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   disabled={tbLocked}
-                  value={entry.tiebreaker?.home ?? ''}
-                  onChange={(e) =>
-                    onTiebreaker(
-                      e.target.value === '' ? null : Number(e.target.value),
-                      entry.tiebreaker?.away ?? null,
-                    )
-                  }
+                  value={homeText}
+                  onChange={(e) => commitHome(e.target.value)}
                 />
               </label>
             </div>

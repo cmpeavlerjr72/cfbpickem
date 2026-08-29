@@ -4,17 +4,23 @@
 // 12:00 AM ET of game week (see pool/spreads.ts).
 
 import { useEffect, useMemo, useState } from 'react';
-import type { Game, WeekData } from '../types';
+import type { CSSProperties } from 'react';
+import type { Game, Team, WeekData } from '../types';
 import type { WeekResults } from '../results';
 import { fetchWeekScoreboard } from '../results';
 import type { PoolSettings, SlateGame, WeekSlate } from '../pool/types';
 import { formatSpread } from '../pool/types';
 import { spreadLockTime } from '../pool/spreads';
+import { TOP25_KEY, buildGameSections } from '../pool/conferences';
+
+/** "#7 ORE" — rank prefix only when the team is ranked. */
+function teamLabel(team: Team | null | undefined): string {
+  const name = team?.abbrev ?? team?.school ?? 'TBD';
+  return team?.rank != null ? `#${team.rank} ${name}` : name;
+}
 
 function shortMatchup(game: Game): string {
-  const away = game.away?.abbrev ?? game.away?.school ?? 'TBD';
-  const home = game.home?.abbrev ?? game.home?.school ?? 'TBD';
-  return `${away} ${game.neutralSite ? 'vs' : '@'} ${home}`;
+  return `${teamLabel(game.away)} ${game.neutralSite ? 'vs' : '@'} ${teamLabel(game.home)}`;
 }
 
 function kickoffLabel(game: Game): string {
@@ -24,6 +30,57 @@ function kickoffLabel(game: Game): string {
     minute: '2-digit',
   });
 }
+
+// Category-section chrome. Inline (not App.css) because this component owns the
+// only markup that uses it; the values come from the same index.css variables
+// the stylesheet uses. Fold into App.css if these classes get reused elsewhere.
+const sx: Record<string, CSSProperties> = {
+  sectionList: { display: 'flex', flexDirection: 'column', gap: 8 },
+  section: {
+    background: 'var(--card)',
+    border: '1px solid var(--border)',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  sectionHead: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '4px 10px 4px 4px',
+  },
+  sectionToggle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    minWidth: 0,
+    background: 'none',
+    border: 'none',
+    padding: '8px 6px',
+    textAlign: 'left',
+    cursor: 'pointer',
+    font: 'inherit',
+  },
+  caret: { color: 'var(--text-dim)', fontSize: 11, width: 12, flex: '0 0 auto' },
+  sectionTitle: { fontSize: 14, fontWeight: 800, color: 'var(--text)' },
+  sectionCount: { fontSize: 12, color: 'var(--text-dim)', marginLeft: 'auto' },
+  sectionAll: {
+    flex: '0 0 auto',
+    background: 'none',
+    border: '1.5px solid var(--border)',
+    borderRadius: 999,
+    color: 'var(--text-dim)',
+    fontSize: 11,
+    fontWeight: 700,
+    padding: '5px 10px',
+    cursor: 'pointer',
+  },
+  sectionBody: { padding: '0 10px 10px' },
+  candidateOn: {
+    borderColor: 'var(--green-border)',
+    background: 'var(--green-soft)',
+  },
+};
 
 interface SlateBuilderProps {
   week: WeekData;
@@ -53,6 +110,15 @@ export function SlateBuilder({
   const [filter, setFilter] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [espn, setEspn] = useState<WeekResults>({});
+  // Top 25 opens by default; conference sections start collapsed.
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set([TOP25_KEY]));
+  // Games/week as local TEXT so the field can be cleared while retyping — the
+  // controlled-number pattern made the 1 undeletable (same defect class as the
+  // tiebreaker inputs, fixed 2026-08-29). Mobile already worked this way.
+  const [sizeText, setSizeText] = useState(String(settings.slateSize));
+  useEffect(() => setSizeText(String(settings.slateSize)), [settings.slateSize]);
+
+  useEffect(() => setOpenSections(new Set([TOP25_KEY])), [week]);
 
   // Current ESPN lines — shown live until the Monday lock.
   useEffect(() => {
@@ -104,23 +170,35 @@ export function SlateBuilder({
     .filter((g): g is Game => !!g)
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  const candidates = useMemo(() => {
+  // Every playable game this week, bucketed into Top 25 + conference sections.
+  // A cross-conference game shows up in both sections — same game id, so
+  // selecting it anywhere selects it everywhere and the count stays deduped.
+  const sections = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    return week.games
-      .filter((g) => g.home && g.away && !draft.has(g.id))
+    const games = week.games
+      .filter((g) => g.home && g.away)
       .filter(
         (g) =>
           !q ||
           g.home!.school.toLowerCase().includes(q) ||
           g.away!.school.toLowerCase().includes(q),
-      )
-      .sort((a, b) => {
-        // Ranked matchups first — those are the slate candidates.
-        const aRank = Math.min(a.home!.rank ?? 99, a.away!.rank ?? 99);
-        const bRank = Math.min(b.home!.rank ?? 99, b.away!.rank ?? 99);
-        return aRank - bRank || a.date.localeCompare(b.date);
-      });
-  }, [week, draft, filter]);
+      );
+    return buildGameSections(games);
+  }, [week, filter]);
+
+  const totalCandidates = useMemo(
+    () =>
+      week.games.filter((g) => {
+        if (!g.home || !g.away) return false;
+        const q = filter.trim().toLowerCase();
+        return (
+          !q ||
+          g.home.school.toLowerCase().includes(q) ||
+          g.away.school.toLowerCase().includes(q)
+        );
+      }).length,
+    [week, filter],
+  );
 
   const toggleGame = (gameId: string) => {
     setDraft((prev) => {
@@ -133,6 +211,35 @@ export function SlateBuilder({
           isTiebreaker: false,
         });
       }
+      return next;
+    });
+  };
+
+  /** Section "Select all" / "Unselect all" — one state update for the group. */
+  const setGames = (games: Game[], selected: boolean) => {
+    setDraft((prev) => {
+      const next = new Map(prev);
+      for (const g of games) {
+        if (selected) {
+          if (!next.has(g.id)) {
+            next.set(g.id, {
+              storedSpread: espn[g.id]?.odds?.spread ?? null,
+              isTiebreaker: false,
+            });
+          }
+        } else {
+          next.delete(g.id);
+        }
+      }
+      return next;
+    });
+  };
+
+  const toggleSection = (key: string) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
@@ -227,16 +334,19 @@ export function SlateBuilder({
           <label className="slate-spread">
             <span>Games/week</span>
             <input
-              type="number"
-              min="1"
-              max="40"
-              value={settings.slateSize}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={sizeText}
               onChange={(e) => {
-                const n = parseInt(e.target.value, 10);
+                const digits = e.target.value.replace(/\D/g, '');
+                setSizeText(digits);
+                const n = parseInt(digits, 10);
                 if (Number.isFinite(n) && n >= 1) {
                   onSaveSettings({ ...settings, slateSize: Math.min(n, 40) });
                 }
               }}
+              onBlur={() => setSizeText(String(settings.slateSize))}
             />
           </label>
         </div>
@@ -366,33 +476,76 @@ export function SlateBuilder({
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
-          <div className="slate-candidates">
-            {candidates.map((game) => (
-              <button
-                key={game.id}
-                type="button"
-                className="slate-candidate"
-                onClick={() => toggleGame(game.id)}
-              >
-                <span className="slate-candidate-add">＋</span>
-                <span className="slate-row-matchup">
-                  {game.away?.rank != null && <em>#{game.away.rank} </em>}
-                  {game.away?.school}
-                  {game.neutralSite ? ' vs ' : ' at '}
-                  {game.home?.rank != null && <em>#{game.home.rank} </em>}
-                  {game.home?.school}
-                </span>
-                {ats && espn[game.id]?.odds?.spread != null && (
-                  <span className="slate-away-line">{espn[game.id]!.odds!.details ?? formatSpread(espn[game.id]!.odds!.spread!)}</span>
-                )}
-                <span className="slate-row-time">{kickoffLabel(game)}</span>
-              </button>
-            ))}
-            <p className="slate-more">
-              {candidates.length} {candidates.length === 1 ? 'game' : 'games'} this week
-              {filter.trim() ? ' matching your search' : ''} · ranked matchups first
-            </p>
+          <div style={sx.sectionList}>
+            {sections.map((section) => {
+              const open = openSections.has(section.key);
+              const picked = section.games.filter((g) => draft.has(g.id)).length;
+              const allPicked = picked === section.games.length;
+              return (
+                <div key={section.key} style={sx.section}>
+                  <div style={sx.sectionHead}>
+                    <button
+                      type="button"
+                      style={sx.sectionToggle}
+                      onClick={() => toggleSection(section.key)}
+                      aria-expanded={open}
+                    >
+                      <span style={sx.caret}>{open ? '▾' : '▸'}</span>
+                      <span style={sx.sectionTitle}>{section.title}</span>
+                      <span style={sx.sectionCount}>
+                        {picked} / {section.games.length} selected
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      style={sx.sectionAll}
+                      onClick={() => setGames(section.games, !allPicked)}
+                    >
+                      {allPicked ? 'Unselect all' : 'Select all'}
+                    </button>
+                  </div>
+                  {open && (
+                    <div className="slate-candidates" style={sx.sectionBody}>
+                      {section.games.map((game) => {
+                        const on = draft.has(game.id);
+                        return (
+                          <button
+                            key={game.id}
+                            type="button"
+                            className="slate-candidate"
+                            style={on ? sx.candidateOn : undefined}
+                            onClick={() => toggleGame(game.id)}
+                            aria-pressed={on}
+                          >
+                            <span className="slate-candidate-add">{on ? '✓' : '＋'}</span>
+                            <span className="slate-row-matchup">
+                              {game.away?.rank != null && <em>#{game.away.rank} </em>}
+                              {game.away?.school}
+                              {game.neutralSite ? ' vs ' : ' at '}
+                              {game.home?.rank != null && <em>#{game.home.rank} </em>}
+                              {game.home?.school}
+                            </span>
+                            {ats && espn[game.id]?.odds?.spread != null && (
+                              <span className="slate-away-line">
+                                {espn[game.id]!.odds!.details ??
+                                  formatSpread(espn[game.id]!.odds!.spread!)}
+                              </span>
+                            )}
+                            <span className="slate-row-time">{kickoffLabel(game)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
+          <p className="slate-more">
+            {totalCandidates} {totalCandidates === 1 ? 'game' : 'games'} this week
+            {filter.trim() ? ' matching your search' : ''} · a game in two conferences is
+            listed under both
+          </p>
         </section>
       )}
     </div>

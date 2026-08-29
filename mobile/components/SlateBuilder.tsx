@@ -13,18 +13,23 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import type { Game, WeekData } from '../types';
+import type { Game, Team, WeekData } from '../types';
 import type { WeekResults } from '../results';
 import { fetchWeekScoreboard } from '../results';
 import type { PoolSettings, SlateGame, WeekSlate } from '../pool/types';
 import { formatSpread } from '../pool/types';
 import { spreadLockTime } from '../pool/spreads';
+import { TOP25_KEY, buildGameSections } from '../pool/conferences';
 import { colors } from '../theme';
 
+/** "#7 ORE" — rank prefix only when the team is ranked. */
+function teamLabel(team: Team | null | undefined): string {
+  const name = team?.abbrev ?? team?.school ?? 'TBD';
+  return team?.rank != null ? `#${team.rank} ${name}` : name;
+}
+
 function shortMatchup(game: Game): string {
-  const away = game.away?.abbrev ?? game.away?.school ?? 'TBD';
-  const home = game.home?.abbrev ?? game.home?.school ?? 'TBD';
-  return `${away} ${game.neutralSite ? 'vs' : '@'} ${home}`;
+  return `${teamLabel(game.away)} ${game.neutralSite ? 'vs' : '@'} ${teamLabel(game.home)}`;
 }
 
 function kickoffLabel(game: Game): string {
@@ -64,8 +69,12 @@ export function SlateBuilder({
   const [error, setError] = useState<string | null>(null);
   const [espn, setEspn] = useState<WeekResults>({});
   const [sizeText, setSizeText] = useState(String(settings.slateSize));
+  // Top 25 opens by default; conference sections start collapsed.
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set([TOP25_KEY]));
 
   useEffect(() => setSizeText(String(settings.slateSize)), [settings.slateSize]);
+
+  useEffect(() => setOpenSections(new Set([TOP25_KEY])), [week]);
 
   // Current ESPN lines — shown live until the Monday lock.
   useEffect(() => {
@@ -123,23 +132,33 @@ export function SlateBuilder({
     .filter((g): g is Game => !!g)
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  const candidates = useMemo(() => {
+  // Every playable game this week, bucketed into Top 25 + conference sections.
+  // A cross-conference game shows up in both sections — same game id, so
+  // selecting it anywhere selects it everywhere and the count stays deduped.
+  const sections = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    return week.games
-      .filter((g) => g.home && g.away && !draft.has(g.id))
+    const games = week.games
+      .filter((g) => g.home && g.away)
       .filter(
         (g) =>
           !q ||
           g.home!.school.toLowerCase().includes(q) ||
           g.away!.school.toLowerCase().includes(q),
-      )
-      .sort((a, b) => {
-        // Ranked matchups first — those are the slate candidates.
-        const aRank = Math.min(a.home!.rank ?? 99, a.away!.rank ?? 99);
-        const bRank = Math.min(b.home!.rank ?? 99, b.away!.rank ?? 99);
-        return aRank - bRank || a.date.localeCompare(b.date);
-      });
-  }, [week, draft, filter]);
+      );
+    return buildGameSections(games);
+  }, [week, filter]);
+
+  const totalCandidates = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    return week.games.filter(
+      (g) =>
+        g.home &&
+        g.away &&
+        (!q ||
+          g.home.school.toLowerCase().includes(q) ||
+          g.away.school.toLowerCase().includes(q)),
+    ).length;
+  }, [week, filter]);
 
   const toggleGame = (gameId: string) => {
     setDraft((prev) => {
@@ -152,6 +171,35 @@ export function SlateBuilder({
           isTiebreaker: false,
         });
       }
+      return next;
+    });
+  };
+
+  /** Section "Select all" / "Unselect all" — one state update for the group. */
+  const setGames = (games: Game[], selected: boolean) => {
+    setDraft((prev) => {
+      const next = new Map(prev);
+      for (const g of games) {
+        if (selected) {
+          if (!next.has(g.id)) {
+            next.set(g.id, {
+              storedSpread: espn[g.id]?.odds?.spread ?? null,
+              isTiebreaker: false,
+            });
+          }
+        } else {
+          next.delete(g.id);
+        }
+      }
+      return next;
+    });
+  };
+
+  const toggleSection = (key: string) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
@@ -383,32 +431,75 @@ export function SlateBuilder({
             value={filter}
             onChangeText={setFilter}
           />
-          <View style={styles.card}>
-            {candidates.map((game) => (
-              <Pressable key={game.id} style={styles.candidate} onPress={() => toggleGame(game.id)}>
-                <Text style={styles.candidateAdd}>＋</Text>
-                <View style={styles.candidateMain}>
-                  <Text style={styles.candidateMatchup} numberOfLines={2}>
-                    {game.away?.rank != null ? `#${game.away.rank} ` : ''}
-                    {game.away?.school}
-                    {game.neutralSite ? ' vs ' : ' at '}
-                    {game.home?.rank != null ? `#${game.home.rank} ` : ''}
-                    {game.home?.school}
-                  </Text>
-                  <Text style={styles.time}>
-                    {kickoffLabel(game)}
-                    {ats && espn[game.id]?.odds?.spread != null
-                      ? ` · ${espn[game.id]!.odds!.details ?? formatSpread(espn[game.id]!.odds!.spread!)}`
-                      : ''}
-                  </Text>
+          <View style={styles.sectionList}>
+            {sections.map((section) => {
+              const open = openSections.has(section.key);
+              const picked = section.games.filter((g) => draft.has(g.id)).length;
+              const allPicked = picked === section.games.length;
+              return (
+                <View key={section.key} style={styles.section}>
+                  <View style={styles.sectionHead}>
+                    <Pressable
+                      style={styles.sectionToggle}
+                      onPress={() => toggleSection(section.key)}
+                    >
+                      <Text style={styles.caret}>{open ? '▾' : '▸'}</Text>
+                      <Text style={styles.sectionTitle} numberOfLines={1}>
+                        {section.title}
+                      </Text>
+                      <Text style={styles.sectionCount}>
+                        {picked} / {section.games.length} selected
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.sectionAll}
+                      onPress={() => setGames(section.games, !allPicked)}
+                    >
+                      <Text style={styles.sectionAllText}>
+                        {allPicked ? 'Unselect all' : 'Select all'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                  {open && (
+                    <View style={styles.sectionBody}>
+                      {section.games.map((game) => {
+                        const on = draft.has(game.id);
+                        return (
+                          <Pressable
+                            key={game.id}
+                            style={[styles.candidate, on && styles.candidateOn]}
+                            onPress={() => toggleGame(game.id)}
+                          >
+                            <Text style={styles.candidateAdd}>{on ? '✓' : '＋'}</Text>
+                            <View style={styles.candidateMain}>
+                              <Text style={styles.candidateMatchup} numberOfLines={2}>
+                                {game.away?.rank != null ? `#${game.away.rank} ` : ''}
+                                {game.away?.school}
+                                {game.neutralSite ? ' vs ' : ' at '}
+                                {game.home?.rank != null ? `#${game.home.rank} ` : ''}
+                                {game.home?.school}
+                              </Text>
+                              <Text style={styles.time}>
+                                {kickoffLabel(game)}
+                                {ats && espn[game.id]?.odds?.spread != null
+                                  ? ` · ${espn[game.id]!.odds!.details ?? formatSpread(espn[game.id]!.odds!.spread!)}`
+                                  : ''}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  )}
                 </View>
-              </Pressable>
-            ))}
-            <Text style={styles.more}>
-              {candidates.length} {candidates.length === 1 ? 'game' : 'games'} this week
-              {filter.trim() ? ' matching your search' : ''} · ranked matchups first
-            </Text>
+              );
+            })}
           </View>
+          <Text style={styles.more}>
+            {totalCandidates} {totalCandidates === 1 ? 'game' : 'games'} this week
+            {filter.trim() ? ' matching your search' : ''} · a game in two conferences is
+            listed under both
+          </Text>
         </View>
       )}
     </View>
@@ -636,6 +727,62 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 10,
   },
+  sectionList: {
+    gap: 8,
+  },
+  section: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 10,
+  },
+  sectionToggle: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingLeft: 12,
+  },
+  caret: {
+    fontSize: 11,
+    color: colors.textDim,
+    width: 12,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.text,
+    flexShrink: 1,
+  },
+  sectionCount: {
+    fontSize: 12,
+    color: colors.textDim,
+    marginLeft: 'auto',
+  },
+  sectionAll: {
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  sectionAllText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textDim,
+  },
+  sectionBody: {
+    paddingHorizontal: 12,
+    paddingBottom: 4,
+  },
   candidate: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -643,6 +790,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: colors.border,
     paddingVertical: 10,
+  },
+  candidateOn: {
+    backgroundColor: colors.greenSoft,
   },
   candidateAdd: {
     fontSize: 18,

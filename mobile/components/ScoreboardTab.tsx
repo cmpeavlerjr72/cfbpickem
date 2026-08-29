@@ -137,6 +137,7 @@ export function ScoreboardTab({
                       isLive
                       situation={gamecastSituation(result!)}
                       bits={gamecastBits(game)}
+                      pickType={slate.pickType ?? 'ats'}
                     />
                   </View>
                 )}
