@@ -1,12 +1,13 @@
 // The player's weekly sheet: ATS pick on each slate game plus the GameDay
-// tiebreaker score guess. Picks save as you go; the WHOLE sheet locks at the
-// week's first kickoff (no late-addition picks). `overriding` = commissioner
-// editing another member's sheet, which ignores the lock.
+// tiebreaker score guess. Picks save as you go; each game locks at ITS OWN
+// kickoff (owner decision 2026-08-29 — the old whole-slate freeze at the
+// week's first kickoff is gone), and the tiebreaker locks when the
+// tiebreaker game kicks. `overriding` = commissioner editing another
+// member's sheet, which ignores every lock.
 
 import { useEffect, useMemo, useState } from 'react';
 import type { Game, WeekData } from '../types';
 import type { WeekResults } from '../results';
-import { isGameLocked } from '../results';
 import type { PickSide, PoolEntry, WeekSlate } from '../pool/types';
 import { spreadLockTime } from '../pool/spreads';
 import type { CoverOdds } from './AtsGameCard';
@@ -18,8 +19,12 @@ interface PickSheetProps {
   entry: PoolEntry;
   results: WeekResults;
   coverOdds?: Record<string, CoverOdds>;
-  picksLockAt: Date | null;
-  picksLocked: boolean;
+  /** Slate game ids that have already kicked — those picks are frozen. */
+  lockedGameIds: Set<string>;
+  /** True once the TIEBREAKER game itself has kicked off. */
+  tiebreakerLocked: boolean;
+  /** Kickoff of the next game still open for picks (null = all locked). */
+  nextLockAt: Date | null;
   overriding: boolean;
   onPick: (gameId: string, side: PickSide) => void;
   onTiebreaker: (home: number | null, away: number | null) => void;
@@ -31,8 +36,9 @@ export function PickSheet({
   entry,
   results,
   coverOdds,
-  picksLockAt,
-  picksLocked,
+  lockedGameIds,
+  tiebreakerLocked,
+  nextLockAt,
   overriding,
   onPick,
   onTiebreaker,
@@ -107,9 +113,10 @@ export function PickSheet({
     else dayGroups.push({ day, items: [item] });
   }
 
-  const tbLocked = overriding
-    ? false
-    : picksLocked || (tbEntry ? isGameLocked(tbEntry.game, results[tbEntry.game.id]) : true);
+  const tbLocked = overriding ? false : tiebreakerLocked;
+
+  const lockedCount = slateGames.filter((x) => lockedGameIds.has(x.game.id)).length;
+  const allLocked = slateGames.length > 0 && lockedCount === slateGames.length;
 
   const linesFloating =
     slate.pickType !== 'su' && !slate.spreadsLockedAt && slateGames.length > 0
@@ -125,25 +132,39 @@ export function PickSheet({
       })
     : '';
 
-  const deadlineLabel = picksLockAt?.toLocaleString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  const kickLabel = (iso: string | Date) =>
+    new Date(iso).toLocaleString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+
+  const nextLockLabel = nextLockAt ? kickLabel(nextLockAt) : null;
+  const tbMatchup = tbEntry
+    ? `${tbEntry.game.away?.abbrev ?? tbEntry.game.away?.school ?? 'away'}–${
+        tbEntry.game.home?.abbrev ?? tbEntry.game.home?.school ?? 'home'
+      }`
+    : null;
 
   return (
     <>
-      {picksLocked && !overriding ? (
+      {overriding ? null : allLocked ? (
         <div className="lines-note">
-          Picks are locked for {week.label} — the first game has kicked off.
+          Every {week.label} game has kicked off — this sheet is locked.
         </div>
-      ) : !picksLocked && deadlineLabel ? (
+      ) : (
         <div className="deadline-note">
-          All picks (and the tiebreaker) lock at the week’s first kickoff: {deadlineLabel}.
+          Each game locks at its own kickoff
+          {nextLockLabel ? ` — next: ${nextLockLabel}` : ''}.
+          {lockedCount > 0 && ` ${lockedCount} of ${slateGames.length} already locked.`}
+          {tbEntry &&
+            ` The tiebreaker locks when the ${tbMatchup} game kicks (${kickLabel(
+              tbEntry.game.date,
+            )}).`}
         </div>
-      ) : null}
+      )}
       {linesFloating && (
         <div className="lines-note">
           Spreads shown are live market numbers — they lock for good on {lockLabel}.
@@ -160,7 +181,7 @@ export function PickSheet({
                 slateGame={sg}
                 pickType={slate.pickType ?? 'ats'}
                 result={results[game.id]}
-                locked={overriding ? false : picksLocked || isGameLocked(game, results[game.id])}
+                locked={overriding ? false : lockedGameIds.has(game.id)}
                 pickedSide={entry.picks[game.id] ?? null}
                 coverOdds={coverOdds?.[game.id] ?? null}
                 onPick={onPick}
@@ -207,7 +228,11 @@ export function PickSheet({
                 />
               </label>
             </div>
-            {tbLocked && <p className="tb-locked-note">Tiebreaker locked with the rest of the slate.</p>}
+            {tbLocked && (
+              <p className="tb-locked-note">
+                Tiebreaker locked — the tiebreaker game has kicked off.
+              </p>
+            )}
           </div>
         </section>
       )}

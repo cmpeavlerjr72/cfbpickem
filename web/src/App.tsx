@@ -60,7 +60,8 @@ export default function App({
   const [coverOdds, setCoverOdds] = useState<Record<string, CoverOdds>>({});
   const results = useWeekResults(season.season, week);
 
-  // Ticks every 30s so the slate lock flips on time without a reload.
+  // Ticks every 30s so a game flips to locked at its own kickoff without a
+  // reload (live-results polling flips it too, whichever lands first).
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -111,25 +112,46 @@ export default function App({
     return map;
   }, [week]);
 
-  // The whole slate hard-locks at the week's first kickoff — after that no
-  // picks can be added or changed (the entries trigger enforces the same
-  // rule server-side; only a commissioner override gets past it).
-  const picksLockAt = useMemo(() => {
-    if (!slate?.published || slate.games.length === 0) return null;
-    const kicks = slate.games
+  // Picks lock PER GAME at that game's own kickoff (owner decision
+  // 2026-08-29, replacing the old whole-slate freeze at the week's first
+  // kickoff). A member can keep filling in later games after early ones
+  // start. The enforce_pick_locks trigger enforces the same per-game rule
+  // server-side; only a commissioner writing ANOTHER member's entry is
+  // exempt.
+  const lockedGameIds = useMemo(() => {
+    const locked = new Set<string>();
+    if (!slate?.published) return locked;
+    for (const sg of slate.games) {
+      const game = gamesById.get(sg.gameId);
+      // isGameLocked reads Date.now() itself; `now` is in the dep list so
+      // this recomputes on the 30s tick as well as on fresh live results.
+      if (game && isGameLocked(game, results[sg.gameId])) locked.add(sg.gameId);
+    }
+    return locked;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slate, gamesById, results, now]);
+
+  // The tiebreaker follows the TIEBREAKER GAME's kickoff, not the slate's.
+  const tiebreakerGameId = useMemo(
+    () => slate?.games.find((g) => g.isTiebreaker)?.gameId ?? null,
+    [slate],
+  );
+  const tiebreakerLocked = tiebreakerGameId != null && lockedGameIds.has(tiebreakerGameId);
+
+  // Kickoff of the next game still open for picks (null once all have kicked).
+  const nextLockAt = useMemo(() => {
+    if (!slate?.published) return null;
+    const upcoming = slate.games
+      .filter((g) => !lockedGameIds.has(g.gameId))
       .map((g) => gamesById.get(g.gameId)?.date)
       .filter((d): d is string => !!d)
       .sort();
-    return kicks[0] ? new Date(kicks[0]) : null;
-  }, [slate, gamesById]);
-  const picksLocked = useMemo(() => {
-    if (!slate?.published) return false;
-    if (picksLockAt && now >= picksLockAt.getTime()) return true;
-    return slate.games.some((g) => {
-      const r = results[g.gameId];
-      return !!r && r.state !== 'pre';
-    });
-  }, [slate, picksLockAt, now, results]);
+    return upcoming[0] ? new Date(upcoming[0]) : null;
+  }, [slate, gamesById, lockedGameIds]);
+
+  // Scoreboard reveal is still a single boolean on that tab (owned elsewhere):
+  // true once ANY slate game has kicked, which is what the old whole-slate
+  // lock meant. The week_entries RPC now returns opponents' picks filtered to
 
   // Kalshi cover odds: refresh every minute while a published slate is open.
   useEffect(() => {
@@ -220,7 +242,7 @@ export default function App({
 
   // Whose sheet the Picks tab is editing: yours, or — commissioner only —
   // any member's (for picks texted in by people who forgot). Commissioner
-  // edits of OTHER sheets bypass the slate lock; their own never does.
+  // edits of OTHER sheets bypass every lock; their own sheet never does.
   const [editingId, setEditingId] = useState<string | null>(null);
   useEffect(() => setEditingId(null), [weekIndex]);
   const editingMember =
@@ -252,7 +274,7 @@ export default function App({
     store.saveEntry(season.season, week.seasonType, week.week, next).catch((err) => {
       alert(
         err instanceof Error && err.message.includes('locked')
-          ? 'Too late — picks are locked for this week (first game kicked off).'
+          ? 'Too late — that game has already kicked off. Each game locks at its own kickoff.'
           : `Couldn’t save the pick: ${err instanceof Error ? err.message : 'unknown error'}`,
       );
       refresh();
@@ -262,7 +284,7 @@ export default function App({
   const handlePick = (gameId: string, side: PickSide) => {
     const game = gamesById.get(gameId);
     if (!game || !slate?.published) return;
-    if (!overriding && (picksLocked || isGameLocked(game, results[gameId]))) return;
+    if (!overriding && lockedGameIds.has(gameId)) return;
     saveActiveEntry((entry) => {
       const picks = { ...entry.picks };
       if (picks[gameId] === side) delete picks[gameId];
@@ -272,7 +294,7 @@ export default function App({
   };
 
   const handleTiebreaker = (home: number | null, away: number | null) => {
-    if (!overriding && picksLocked) return;
+    if (!overriding && tiebreakerLocked) return;
     saveActiveEntry((entry) => ({
       ...entry,
       tiebreaker: home == null && away == null ? null : { home: home ?? 0, away: away ?? 0 },
@@ -397,8 +419,8 @@ export default function App({
                 </label>
                 {overriding && (
                   <span className="commish-note">
-                    Commissioner override — the lock doesn’t apply here. Only enter picks the
-                    player sent you before kickoff.
+                    Commissioner override — kickoff locks don’t apply here. Only enter picks the
+                    player sent you before that game kicked off.
                   </span>
                 )}
               </div>
@@ -409,8 +431,9 @@ export default function App({
               entry={activeEntry}
               results={results}
               coverOdds={coverOdds}
-              picksLockAt={picksLockAt}
-              picksLocked={picksLocked}
+              lockedGameIds={lockedGameIds}
+              tiebreakerLocked={tiebreakerLocked}
+              nextLockAt={nextLockAt}
               overriding={overriding}
               onPick={handlePick}
               onTiebreaker={handleTiebreaker}
@@ -424,7 +447,6 @@ export default function App({
             entries={entries}
             results={results}
             coverOdds={coverOdds}
-            picksLocked={picksLocked}
             currentPlayerId={profile.playerId}
             isCommissioner={profile.isCommissioner}
           />
@@ -498,7 +520,7 @@ export default function App({
                 alert(
                   allPicked && tiebreakerSet
                     ? `Sheet complete — ${pickedCount} picks + tiebreaker in for ${week.label}! 🔒`
-                    : `${pickedCount}/${slateGameIds.length} picks saved${tiebreakerSet ? '' : ' — don’t forget the tiebreaker'}. You can change them until the first game kicks off.`,
+                    : `${pickedCount}/${slateGameIds.length} picks saved${tiebreakerSet ? '' : ' — don’t forget the tiebreaker'}. Each game stays open until it kicks off, so you can still fill in the rest.`,
                 )
               }
             >

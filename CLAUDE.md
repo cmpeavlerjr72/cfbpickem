@@ -67,11 +67,14 @@ tiebreaker fix / gamecast pick-type filter (a1a0c1d).
   score, closest total wins). 1 pt/game, push = ½ pt (configurable). Weekly winners +
   season standings (total pts, weekly wins break ties). SU pools show Kalshi moneyline
   odds (`KXNCAAFGAME`) instead of spread odds.
-- **Pick deadline: the whole slate locks at the week's first kickoff** (no per-game
-  trickle — prevents late-addition picks after early games start). Enforced by the
-  `enforce_pick_locks` trigger server-side and mirrored in the UI (`picksLocked` in
-  `App.tsx`). Everyone's picks + tiebreaker reveal at that same instant (`week_entries`
-  RPC). **Commissioner override:** the commish can enter/adjust any OTHER member's picks
+- **Pick deadline: PER GAME — each pick is editable until its own game kicks off**
+  (owner decision 2026-08-29, reversing the earlier whole-slate rule after the first
+  live game day). The cheat-proofing invariant that must never be split: a pick LOCKS
+  at its game's kickoff and other members' picks REVEAL per game at that same instant
+  (`week_entries` RPC filters server-side), so an editable pick is never readable.
+  The tiebreaker locks AND reveals at the TIEBREAKER game's kickoff. Enforced by the
+  `enforce_pick_locks` trigger server-side (per-changed-pick diff, migration
+  20260829173000) and mirrored in the UI (`lockedGameIds` in `App.tsx`). **Commissioner override:** the commish can enter/adjust any OTHER member's picks
   at any time (people text in picks they forgot to enter) via the "Entering picks for…"
   selector on the Picks tab; the trigger bypasses locks only when a commissioner writes
   someone else's entry — their own sheet locks like everyone's. The commish also sees all
@@ -182,9 +185,10 @@ Share-sheet guide on iOS because WebKit has no install API.
 - Schema in `supabase/migrations/`: profiles, pools (+invite codes), pool_members,
   games (kickoffs, for lock enforcement), slates, entries. RLS: players write their own
   entry, commissioners can also write any member's entry in their pool; opponents' picks
-  come via the `week_entries` RPC which hides them until the slate locks (first kickoff;
-  commissioners always see them); the `enforce_pick_locks` trigger rejects writes after
-  the slate lock except commissioner writes to others' entries; pools are created/joined
+  come via the `week_entries` RPC which reveals each pick only once ITS game has kicked
+  (commissioners always see everything); the `enforce_pick_locks` trigger rejects
+  changes to picks whose game has kicked (tiebreaker: the tiebreaker game) except
+  commissioner writes to others' entries; pools are created/joined
   via `create_pool`/`join_pool` RPCs.
 - **Commissioner roster + dues (2026-08-28, migration `20260828180000_league_dues.sql`):**
   `pool_members` gained `dues_paid` (+ `dues_updated_at` / `dues_updated_by`, stamped by

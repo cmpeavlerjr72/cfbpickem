@@ -1053,7 +1053,13 @@ section:first-child .day-header {
   margin: 0 auto;
 }
 
+/* A card stands alone unless the live stack (situation strip → gamecast
+   opener → panel) hangs off its bottom edge. */
 .scoreboard-item .game-card {
+  border-radius: 12px;
+}
+
+.scoreboard-item.live .game-card {
   border-radius: 12px 12px 0 0;
 }
 
@@ -1084,56 +1090,281 @@ section:first-child .day-header {
   white-space: nowrap;
 }
 
-.pick-chips {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-top: none;
-  border-radius: 0 0 12px 12px;
-  padding: 8px 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
+/* ---------- Picks grid (who took whom, one row per member) ---------- */
 
-.pick-chips-note {
-  font-size: 12px;
-  color: var(--text-dim);
-  flex-basis: 100%;
-}
-
-.pick-chip {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 999px;
+.picks-board {
   background: var(--card);
   border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.picks-board-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.picks-board-title {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text);
+}
+
+.picks-board-note {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: auto;
+  text-align: right;
+}
+
+/* The grid scrolls sideways inside its own box — a 14-game slate never
+   pushes the page wider than the phone. */
+.picks-board-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.picks-grid {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+}
+
+.picks-grid th,
+.picks-grid td {
+  border-bottom: 1px solid var(--border);
+}
+
+.picks-grid tr:last-child th,
+.picks-grid tr:last-child td {
+  border-bottom: none;
+}
+
+/* Member column stays put while the games scroll under it. */
+.pg-corner,
+.pg-name {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 118px;
+  min-width: 118px;
+  max-width: 118px;
+  text-align: left;
+  padding: 6px 10px;
+  box-shadow: 1px 0 0 var(--border);
+}
+
+.pg-corner {
+  background: var(--bg);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
   color: var(--text-dim);
 }
 
-.pick-chip.win,
-.pick-chip.ahead {
-  background: var(--green-soft);
-  border-color: var(--green-border);
-  color: var(--green);
+.pg-name {
+  background: var(--card);
+  font-weight: 700;
 }
 
-.pick-chip.loss,
-.pick-chip.behind {
+.pg-row.me .pg-name {
+  background: #eef4fc;
+  box-shadow: inset 3px 0 0 var(--navy-light), 1px 0 0 var(--border);
+}
+
+.pg-player {
+  display: block;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pg-record {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Game column headers: away over home, abbrevs only (the pick logos carry
+   the identity in the cells). */
+.pg-col {
+  background: var(--bg);
+  padding: 5px 4px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0.3px;
+  color: var(--text-dim);
+  text-align: center;
+  white-space: nowrap;
+  min-width: 42px;
+}
+
+.pg-col-team {
+  display: block;
+}
+
+.pg-col-home {
+  color: var(--text);
+}
+
+.pg-col.live {
   background: var(--red-soft);
-  border-color: #fecaca;
   color: var(--red);
 }
 
-.pick-chip.push {
+.pg-col.live .pg-col-home {
+  color: var(--red);
+}
+
+.pg-col.final {
+  opacity: 0.65;
+}
+
+.pg-col.tb {
+  box-shadow: inset 0 -2px 0 var(--amber);
+}
+
+.pg-cell {
+  position: relative;
+  width: 42px;
+  min-width: 42px;
+  height: 34px;
+  padding: 3px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.pg-mark {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+/* Fallback when a logo is missing or fails to load — the abbrev, never a
+   broken-image slot. */
+.pg-mark-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 22px;
+  padding: 0 3px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--border);
+  color: var(--text);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+/* Grading tint, carried over from the old pick chips. */
+.pg-cell.win,
+.pg-cell.ahead {
+  background: var(--green-soft);
+}
+
+.pg-cell.loss,
+.pg-cell.behind {
+  background: var(--red-soft);
+}
+
+.pg-cell.push {
   background: var(--amber-soft);
-  border-color: var(--amber);
+}
+
+/* Final grades also get a glyph, so the result never rests on colour alone. */
+.pg-grade {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-dim);
+}
+
+.pg-cell.win .pg-grade {
+  color: var(--green);
+}
+
+.pg-cell.loss .pg-grade {
+  color: var(--red);
+}
+
+.pg-cell.push .pg-grade {
   color: var(--amber);
 }
 
-.pick-chip.me {
-  outline: 2px solid var(--navy-light);
-  outline-offset: -1px;
+/* Not revealed yet (game hasn't kicked) vs. genuinely no pick. */
+.pg-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  vertical-align: middle;
+}
+
+.pg-empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pg-tb-col,
+.pg-tb {
+  padding: 5px 8px;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pg-tb-col {
+  background: var(--bg);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: var(--text-dim);
+}
+
+.picks-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 6px 12px 8px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.picks-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+@media (max-width: 380px) {
+  .pg-corner,
+  .pg-name {
+    width: 96px;
+    min-width: 96px;
+    max-width: 96px;
+    padding: 6px 8px;
+  }
 }
 
 /* ---------- Auth ---------- */
@@ -1473,20 +1704,103 @@ section:first-child .day-header {
   font-weight: 700;
 }
 
-.gamecast-toggle-btn {
-  align-self: flex-start;
-  background: none;
-  border: none;
+/* Way into the gamecast. A bare "Gamecast ▼" caret read as a tray handle for
+   the picks below it, so this is an explicit info strip: chart glyph, label,
+   a line saying what's inside, chevron on the right. */
+.gamecast-open {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  color: var(--navy);
+  padding: 8px 12px;
+}
+
+.gamecast-open.open {
+  border-radius: 0;
+}
+
+.gamecast-open-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: 7px;
+  background: var(--card);
+  border: 1px solid var(--border);
   color: var(--navy-light);
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 12px 2px;
+}
+
+.gamecast-open-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.gamecast-open-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* The panel only exists for live games, so the invitation is always the
+   loud variant: a pulsing red dot in the app's live colour. */
+.gamecast-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+  flex: 0 0 auto;
+  animation: gamecast-live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes gamecast-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gamecast-live-dot {
+    animation: none;
+  }
+}
+
+.gamecast-open-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gamecast-open-chevron {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--navy-light);
 }
 
 .gamecast-panel {
   background: var(--card);
   border: 1px solid var(--border);
   border-top: none;
+  border-radius: 0 0 12px 12px;
   padding: 12px;
   display: grid;
   gap: 14px;
