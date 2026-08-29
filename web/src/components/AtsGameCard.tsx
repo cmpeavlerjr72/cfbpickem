@@ -44,6 +44,20 @@ export function weatherEmoji(conditionId: number | null): string | null {
   return null;
 }
 
+/**
+ * "SHI Stadium · Piscataway, NJ" — whichever of the three parts ESPN gave us
+ * (the venue block is optional in older cached season data, hence the `?.`).
+ * Returns null when there is nothing to say, so the row simply doesn't render.
+ */
+function venueLine(game: Game): string | null {
+  const name = game.venue?.name?.trim() || null;
+  const city = game.venue?.city?.trim() || null;
+  const state = game.venue?.state?.trim() || null;
+  const place = city && state ? `${city}, ${state}` : city || state;
+  const bits = [name, place].filter(Boolean);
+  return bits.length > 0 ? bits.join(' · ') : null;
+}
+
 interface WeatherChipContent {
   text: string;
   title?: string;
@@ -181,6 +195,7 @@ export function AtsGameCard({
   const coveringLabel = ats ? 'covering' : 'leading';
   const oddsTitle = ats ? 'Market odds to cover' : 'Market odds to win';
   const weatherChip = buildWeatherChip(result);
+  const venue = venueLine(game);
 
   return (
     <div className={`game-card${slateGame.isTiebreaker ? ' tiebreaker-card' : ''}`}>
@@ -233,6 +248,7 @@ export function AtsGameCard({
         odds={coverOdds?.home ?? null}
         onSelect={() => onPick?.(game.id, 'home')}
       />
+      {venue && <div className="game-venue">{venue}</div>}
     </div>
   );
 }

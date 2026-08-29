@@ -54,6 +54,15 @@ export interface GameResult {
   homeWinPct: number | null;
   /** ESPN's line for the game (pregame) — used to prefill commissioner spreads. */
   odds: EspnOdds | null;
+  /**
+   * Does the scoreboard carry stat leaders for this game? PREGAME this is a
+   * free "have either of these teams played yet" flag — verified 2026-08-29
+   * to match the per-game summary feed's team-leaders block exactly (5/5 on
+   * a 2026 sample), so the scoreboard card uses it to decide whether to offer
+   * its Team-leaders section without fetching a single summary. Live/final it
+   * just means ESPN is publishing game leaders, which it always is.
+   */
+  hasStatLeaders: boolean;
 }
 
 /** gameId -> result */
@@ -112,6 +121,13 @@ function parseScoreboard(json: unknown): WeekResults {
       }
     }
     const situation = comp.situation ?? {};
+    // Event-level, not per-competitor: one leader per category across BOTH
+    // teams. Enough to know leaders EXIST, not enough to render them per team
+    // (see leaders.ts).
+    const leaderCats: any[] = Array.isArray(comp.leaders) ? comp.leaders : [];
+    const hasStatLeaders = leaderCats.some(
+      (c) => Array.isArray(c?.leaders) && c.leaders.length > 0,
+    );
     const rawOdds = comp.odds?.[0] ?? null;
     const spread = rawOdds ? Number(rawOdds.spread ?? rawOdds.pointSpread) : NaN;
     const overUnder = rawOdds ? Number(rawOdds.overUnder ?? rawOdds.total) : NaN;
@@ -155,6 +171,7 @@ function parseScoreboard(json: unknown): WeekResults {
       distance: typeof situation.distance === 'number' ? situation.distance : null,
       attackDir: inferAttackDir(situation.lastPlay, possessionTeamId),
       homeWinPct: typeof winPct === 'number' ? 100 * winPct : null,
+      hasStatLeaders,
       odds: rawOdds
         ? {
             details: rawOdds.details ?? null,

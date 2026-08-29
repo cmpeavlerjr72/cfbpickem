@@ -1800,6 +1800,159 @@ section:first-child .day-header {
   color: var(--navy-light);
 }
 
+/* ---------- Pregame team leaders ----------
+   The pregame sibling of the gamecast strip: same opener chrome (it reuses
+   .gamecast-open), attached under the card the same way. */
+
+.scoreboard-item.has-leaders .game-card {
+  border-radius: 12px 12px 0 0;
+}
+
+.leaders-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  padding: 4px 12px 10px;
+}
+
+.leaders-loading {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  padding: 8px 0;
+}
+
+.leaders-row {
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+
+.leaders-row:first-child {
+  border-top: none;
+}
+
+.leaders-cat {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+/* Stacked on phones — two 36px headshots plus names and a stat line will not
+   sit side by side inside a card. Two columns once there is room. */
+.leaders-cells {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+@media (min-width: 560px) {
+  .leaders-cells {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}
+
+/* Only one team has stats — it gets the whole row rather than half of it. */
+.leaders-cells.single {
+  grid-template-columns: 1fr;
+}
+
+.leader-cell {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.leader-shot {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.leader-shot-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--navy-light);
+}
+
+.leader-cell.empty .leader-shot-fallback {
+  color: var(--text-dim);
+}
+
+.leader-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.leader-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.leader-logo {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.leader-abbrev {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: var(--text-dim);
+}
+
+.leader-player {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leader-pos {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.leader-stat {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* One line for a team that has not played yet, instead of an empty cell on
+   every category row. */
+.leaders-note {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
 .gamecast-panel {
   background: var(--card);
   border: 1px solid var(--border);

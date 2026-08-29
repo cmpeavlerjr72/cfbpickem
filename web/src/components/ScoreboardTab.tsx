@@ -17,6 +17,7 @@ import { coverMargin, gradeAts } from '../pool/scoring';
 import { AtsGameCard } from './AtsGameCard';
 import type { GamecastSituation } from '../gamecast';
 import { FieldStrip, LiveGamePanel, type TeamBits } from './LiveGamecast';
+import { TeamLeadersSection } from './TeamLeaders';
 
 /** Field-visual bits built from the ESPN-joined Team objects — the join is
  * by id everywhere, never by name (see types.ts). Team.color already
@@ -81,6 +82,19 @@ export function ScoreboardTab({
 
   // Gamecast break-out panel: one game open at a time.
   const [openGamecastId, setOpenGamecastId] = useState<string | null>(null);
+  // Pregame team-leaders section: same one-at-a-time idiom, plus the set of
+  // games ESPN turned out to have no leaders for (they hide for good).
+  const [openLeadersId, setOpenLeadersId] = useState<string | null>(null);
+  const [noLeaders, setNoLeaders] = useState<ReadonlySet<string>>(() => new Set());
+  const hideLeaders = (gameId: string) => {
+    setOpenLeadersId((cur) => (cur === gameId ? null : cur));
+    setNoLeaders((cur) => {
+      if (cur.has(gameId)) return cur;
+      const next = new Set(cur);
+      next.add(gameId);
+      return next;
+    });
+  };
 
   if (!slate || !slate.published || slate.games.length === 0) {
     return (
@@ -114,8 +128,20 @@ export function ScoreboardTab({
       {items.map(({ sg, game }) => {
         const result = results[game.id];
         const live = result?.state === 'in';
+        // Pregame team leaders. The gate costs no network: regular-season
+        // weeks 0-1 have no prior stats to lead with, and from the week's
+        // first kickoff the scoreboard's own leaders flag answers per game
+        // (results is {} before then — see getWeekResults).
+        const pregame = !result || result.state === 'pre';
+        const showLeaders =
+          pregame &&
+          !noLeaders.has(game.id) &&
+          (week.seasonType !== 2 || week.week >= 2 || result?.hasStatLeaders === true);
         return (
-          <div key={game.id} className={`scoreboard-item${live ? ' live' : ''}`}>
+          <div
+            key={game.id}
+            className={`scoreboard-item${live ? ' live' : ''}${showLeaders ? ' has-leaders' : ''}`}
+          >
             <AtsGameCard
               game={game}
               slateGame={sg}
@@ -145,6 +171,18 @@ export function ScoreboardTab({
                   />
                 )}
               </>
+            )}
+            {showLeaders && (
+              <TeamLeadersSection
+                eventId={game.id}
+                away={game.away}
+                home={game.home}
+                open={openLeadersId === game.id}
+                onToggle={() =>
+                  setOpenLeadersId((cur) => (cur === game.id ? null : game.id))
+                }
+                onEmpty={() => hideLeaders(game.id)}
+              />
             )}
           </div>
         );
