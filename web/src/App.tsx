@@ -13,6 +13,7 @@ import { MembersTab } from './components/MembersTab';
 import { SlateBuilder } from './components/SlateBuilder';
 import { ScoreboardTab } from './components/ScoreboardTab';
 import { StandingsTab } from './components/StandingsTab';
+import { WinnerCelebration } from './components/WinnerCelebration';
 import './App.css';
 
 const season = gamesJson as SeasonData;
@@ -325,6 +326,18 @@ export default function App({
 
   return (
     <div className={`app${showPickBar ? '' : ' no-pick-bar'}`}>
+      <WinnerCelebration
+        poolId={store.poolId}
+        week={week}
+        slate={slate}
+        entries={entries}
+        results={results}
+        settings={settings}
+        currentPlayerId={profile.playerId}
+        currentPlayerName={profile.playerName}
+        weeks={season.weeks}
+        pickBarVisible={showPickBar}
+      />
       <header className="app-header">
         <div className="app-header-inner">
           <div className="app-brand">

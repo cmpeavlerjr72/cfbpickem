@@ -7,6 +7,14 @@ import { DEFAULT_SETTINGS } from './types';
 import { supabase } from './supabase';
 
 export interface PoolStore {
+  /**
+   * The pool's id, or null in offline/local mode (LocalPoolStore is a single
+   * browser with no accounts, so there is no pool row to identify). Exists
+   * so a rare pool-specific UI touch (e.g. WinnerCelebration's hardcoded
+   * league id) can gate on it without reaching past this interface.
+   */
+  readonly poolId: string | null;
+
   getProfile(): Promise<PoolProfile | null>;
   saveProfile(profile: PoolProfile): Promise<void>;
 
@@ -60,6 +68,8 @@ function writeJson(key: string, value: unknown): void {
 }
 
 class LocalPoolStore implements PoolStore {
+  readonly poolId = null;
+
   async getProfile(): Promise<PoolProfile | null> {
     return readJson<PoolProfile>(profileKey);
   }

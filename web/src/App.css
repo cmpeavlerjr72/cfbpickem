@@ -2275,3 +2275,242 @@ section:first-child .day-header {
     font-size: 10px;
   }
 }
+
+/* ---------- Weekly winner celebration (one league only, see
+   components/WinnerCelebration.tsx) ---------- */
+
+/* Full-viewport, above everything else (install sheet sits at 1200). The
+   backdrop itself is the "tap anywhere to dismiss" surface; every child is
+   decorative (pointer-events: none) except the explicit close button, so
+   pointer-events only ever land on a dismiss affordance. */
+.celebrate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  overflow: hidden;
+  background: rgba(15, 36, 64, 0.72);
+  cursor: pointer;
+}
+
+.celebrate-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.celebrate-dot {
+  position: absolute;
+  top: -16px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  opacity: 0.9;
+  animation: celebrate-fall 3.2s linear infinite;
+}
+
+.celebrate-dot-0 {
+  background: var(--green-border);
+}
+.celebrate-dot-1 {
+  background: var(--amber);
+}
+.celebrate-dot-2 {
+  background: #fff;
+}
+.celebrate-dot-3 {
+  background: var(--green);
+}
+.celebrate-dot-4 {
+  background: var(--red);
+}
+.celebrate-dot-5 {
+  background: var(--navy-light);
+}
+
+@keyframes celebrate-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+  }
+  100% {
+    transform: translateY(110vh) rotate(360deg);
+  }
+}
+
+/* Outer track does the horizontal sweep; the image itself does an
+   independent vertical bob + rotate — two composed animations, same trick
+   as a sprite walk cycle. Single-direction loop (always left-to-right,
+   resetting off-screen) rather than a scaleX-flipping ping-pong: cheap and
+   never mismatches facing direction mid-reverse. */
+.celebrate-dancer-track {
+  position: absolute;
+  left: 0;
+  bottom: 8%;
+  height: 260px;
+  pointer-events: none;
+  animation: celebrate-sweep 6s linear infinite;
+}
+
+@keyframes celebrate-sweep {
+  from {
+    transform: translateX(-40vw);
+  }
+  to {
+    transform: translateX(140vw);
+  }
+}
+
+.celebrate-dancer {
+  display: block;
+  height: 100%;
+  width: auto;
+  animation: celebrate-bob 0.45s ease-in-out infinite;
+}
+
+@keyframes celebrate-bob {
+  0% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-22px) rotate(6deg);
+  }
+  100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+}
+
+.celebrate-banner {
+  position: relative;
+  z-index: 1;
+  background: var(--card);
+  color: var(--text);
+  border-radius: 18px;
+  padding: 22px 28px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.4);
+  max-width: min(360px, 86vw);
+}
+
+.celebrate-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--amber);
+}
+
+.celebrate-name {
+  margin-top: 6px;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.celebrate-record {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.celebrate-close {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top, 0px));
+  right: 14px;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* Motion-sensitive: static image + banner only, no traversal, no falling
+   confetti. */
+@media (prefers-reduced-motion: reduce) {
+  .celebrate-dancer-track {
+    position: static;
+    width: auto;
+    height: auto;
+    animation: none;
+    display: flex;
+    justify-content: center;
+  }
+
+  .celebrate-dancer {
+    height: 260px;
+    animation: none;
+    transform: none;
+  }
+
+  .celebrate-confetti {
+    display: none;
+  }
+}
+
+/* ---------- Persistent winner badge (docked corner dancer) ----------
+   Lives from the win until the next week's first kickoff (see
+   WinnerCelebration.tsx's badgeCutoff). Never intercepts a tap, and sits
+   below any real modal/overlay in the stack (install sheet 1200, the
+   celebration overlay above at 3000). */
+.winner-badge {
+  position: fixed;
+  right: 12px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* Docks above the fixed pick bar instead of overlapping it (the pick bar's
+   own footprint is ~84px, see .app's padding-bottom above). */
+.winner-badge-clear-pickbar {
+  bottom: calc(84px + 16px + env(safe-area-inset-bottom, 0px));
+}
+
+.winner-badge-dancer {
+  display: block;
+  height: 76px;
+  width: auto;
+  transform-origin: bottom center;
+  animation: winner-badge-sway 2.6s ease-in-out infinite;
+  filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.35));
+}
+
+@keyframes winner-badge-sway {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(4deg);
+  }
+}
+
+.winner-badge-caption {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #fff;
+  background: var(--navy);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .winner-badge-dancer {
+    animation: none;
+  }
+}
