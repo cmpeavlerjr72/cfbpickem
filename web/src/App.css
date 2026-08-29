@@ -2352,6 +2352,9 @@ section:first-child .day-header {
   bottom: 8%;
   height: 260px;
   pointer-events: none;
+  /* Above the banner (z 1): she dances IN FRONT of the box, never behind it
+     (owner feedback 2026-08-29). The ✕ sits above her at z 3. */
+  z-index: 2;
   animation: celebrate-sweep 6s linear infinite;
 }
 
@@ -2420,7 +2423,7 @@ section:first-child .day-header {
   position: absolute;
   top: max(14px, env(safe-area-inset-top, 0px));
   right: 14px;
-  z-index: 2;
+  z-index: 3;
   width: 36px;
   height: 36px;
   border: 0;

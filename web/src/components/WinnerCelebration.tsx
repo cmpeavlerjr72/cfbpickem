@@ -29,7 +29,6 @@ import { isWeekComplete, scoreWeek } from '../pool/scoring';
  */
 const CELEBRATION_POOL_ID = 'e51fe3c7-fb9d-41a1-a6c2-2dfb93eed854';
 
-const AUTO_DISMISS_MS = 12_000;
 const CONFETTI_COUNT = 12;
 
 function celebratedKey(poolId: string, slate: WeekSlate): string {
@@ -211,11 +210,9 @@ export function WinnerCelebration({
     setOverlayVisible(true);
   }, [previewMode, poolId, slate, myWin]);
 
-  useEffect(() => {
-    if (!overlayVisible) return;
-    const timer = window.setTimeout(() => setOverlayVisible(false), AUTO_DISMISS_MS);
-    return () => window.clearTimeout(timer);
-  }, [overlayVisible]);
+  // No auto-dismiss (owner feedback 2026-08-29): she loops until the ✕ is
+  // pressed. The ✕ is the ONLY dismiss — a stray scrim tap can't burn the
+  // once-per-week show by accident.
 
   // ---- persistent badge: load from storage + live-expire at the cutoff ----
   const [badge, setBadge] = useState<{ record: WinnerBadgeRecord; cutoff: number } | null>(null);
@@ -333,7 +330,6 @@ export function WinnerCelebration({
           role="dialog"
           aria-modal="true"
           aria-label="Weekly winner celebration"
-          onClick={() => setOverlayVisible(false)}
         >
           <div className="celebrate-confetti" aria-hidden="true">
             {Array.from({ length: CONFETTI_COUNT }).map((_, i) => (
