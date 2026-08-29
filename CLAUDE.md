@@ -1,11 +1,16 @@
 # CFB Pick'em
 
-A college football pick'em game with two clients: a website and a mobile app. Starting with CFB (2026 season); may later expand to NFL / CBB.
+A college football pick'em game. **The product is the website + its installable
+PWA ("Saturday Sweats") — the native mobile app is ABANDONED (owner decision
+2026-08-29).** Starting with CFB (2026 season); may later expand to NFL / CBB.
 
 ## Structure
 
-- `web/` — website: Vite + React + TypeScript
-- `mobile/` — mobile app: Expo (React Native) + TypeScript
+- `web/` — THE product: Vite + React + TypeScript, installable PWA
+- `mobile/` — RETIRED Expo (React Native) app. Frozen in-tree for reference;
+  do not build features here, do not publish OTA updates, do not resubmit to
+  either store. Last shipped state: commit a1a0c1d + Android OTA group
+  f7d6de62 (2026-08-29).
 - `data/` — season data pipeline (source of truth for game data)
 - `docs/launch-plan.md` — **pre-season launch-readiness plan** (P0 custom SMTP, egress
   work incl. the Kalshi worker design, the ESPN-stays-client-direct decision, backup
@@ -24,12 +29,12 @@ workers, reviewing their output, and reporting — not on reading files or typin
 - **Workers do:** implementation, broad codebase exploration, mechanical edits, test
   runs, log/data digging. Pick the cheapest model that can do the job:
   - `haiku` — lookups, greps, file summaries, mechanical find/replace, running commands.
-  - `sonnet` — ordinary feature work and bug fixes with a clear brief; parity ports
-    (web ↔ mobile mirrors); writing migrations/scripts from a spec.
+  - `sonnet` — ordinary feature work and bug fixes with a clear brief; writing
+    migrations/scripts from a spec.
   - `opus` — multi-file design work, tricky debugging, anything where the brief can't
     fully pin down the approach.
 - Briefs must be self-contained: files involved, the exact behavior wanted, constraints
-  from this CLAUDE.md (parity, Android-only OTA, Week 0/espnWeek, etc.), and what to
+  from this CLAUDE.md (web-only product, Week 0/espnWeek, etc.), and what to
   report back. Ask workers to return a short diff summary, not file dumps.
 - Independent tasks run as parallel workers in one message. Fable still reviews every
   worker diff before committing — workers are fast, not trusted.
@@ -37,26 +42,14 @@ workers, reviewing their output, and reporting — not on reading files or typin
   more than doing, and anything needing the user's live context (credentials, running
   interactive commands).
 
-## STANDING RULE: web/mobile parity
+## RETIRED RULE: web/mobile parity (ended 2026-08-29)
 
-**Whenever a change is made to either the web app or the mobile app, check whether the same change needs to be made on the other, and make it in the same working session.** The two clients should always be at the same feature state. This applies to features, UI behavior, data-model changes, and business logic (pick rules, scoring, lock times). If a change genuinely applies to only one platform (e.g. a platform-specific fix), note why in the commit/summary.
-
-**Parity resumed Android-first (2026-08-15):** mobile now has the full pool model
-(auth, pick sheet, scoreboard, standings, slate lock, commissioner override) and ships
-**Android-only OTA updates** while iOS is between App Store submissions:
-`cd mobile && npx eas update --branch production --platform android --environment production -m "..."`
-(EAS is logged in on this box; runtime 1.0.0 — JS-only changes ship OTA, adding a
-native module requires a new EAS build + Play submission). **iOS status (2026-08-23):**
-the original stripped account-free v1 build was rejected Aug 20 under Guideline 4.2
-Minimum Functionality (read as too thin, like a notes app); we're resubmitting a new iOS
-build of this same full pool app — no more account-free mode — with `supportsTablet:
-false` (iPhone-only, since Apple reviewed on an iPad Air) and a demo league seeded via
-`data/seed-demo-league.mjs` for App Review (see `mobile/store/SUBMISSION.md`). Until
-Apple approves, **never publish an update without `--platform android`**; then one
-`--platform ios` update catches iOS up. Deliberate platform
-exceptions: mobile has no LocalPoolStore fallback (Supabase config is baked in) and
-password-reset links open the website. Everything else — including the commissioner
-SlateBuilder and the league dashboard — exists on both platforms.
+The parity rule — every web change mirrored into `mobile/` in the same
+session — is RETIRED with the native app. All feature work is web-only now.
+The old rule and the Android-first parity history live in git (this file
+before commit history 2026-08-29) if the native app is ever revived. The last
+parity batch to ship both platforms: slate conference sections / ranks /
+tiebreaker fix / gamecast pick-type filter (a1a0c1d).
 
 ## Pool model (web, funofficepools.com-style)
 
@@ -119,8 +112,8 @@ the Supabase URL/anon key to the production build.
 
 ### PWA — the website installs as "Saturday Sweats" (2026-08-28)
 
-The web app is installable to a phone home screen, which is the distribution path
-while iOS is stuck in App Review. `public/manifest.webmanifest` (name "Saturday
+The web app is installable to a phone home screen — THE distribution path, full
+stop, since the native app was abandoned (2026-08-29). `public/manifest.webmanifest` (name "Saturday
 Sweats", home-screen label "Sat Sweats" — iOS truncates past ~12 chars),
 `src/sw.ts` (the service worker) and `src/pwa.ts` (registration) are the whole of
 it; `components/InstallPrompt.tsx` is the in-app "Install app" bar, which shows a
@@ -259,9 +252,9 @@ Shared concepts to keep in sync manually (no shared package yet):
   re-apply).
 - Sync data into both apps: `node data/sync-to-apps.mjs 2026`
   (writes minified copies to `web/src/data/games.json` and `mobile/assets/games.json`)
-- After refetching data, always re-run the sync so both apps see the same data.
+- After refetching data, always re-run the sync (the mobile copy it also writes is vestigial since the native app was abandoned).
 
-## App Store / Play submission (mobile)
+## App Store / Play submission (mobile) — MOOT: native app abandoned 2026-08-29
 
 Everything lives in `mobile/store/`: `SUBMISSION.md` is the step-by-step checklist (EAS
 commands, known risks, and the current iOS resubmission steps after the Aug 20 4.2
