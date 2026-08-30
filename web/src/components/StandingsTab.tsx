@@ -3,37 +3,28 @@
 
 import { useEffect, useState } from 'react';
 import type { SeasonData } from '../types';
-import { getWeekResults } from '../results';
 import type { PoolSettings } from '../pool/types';
 import type { PoolStore } from '../pool/store';
 import type { EntryScore, ScoredWeek, SeasonRow } from '../pool/scoring';
-import { isWeekComplete, scoreWeek, seasonStandings } from '../pool/scoring';
+import { countsTowardSeason, seasonStandings } from '../pool/scoring';
+import { loadScoredWeeks } from '../pool/scoredWeeks';
+import { DEGENERATE_NATION_POOL_ID } from '../pool/degenerate';
 
 function pointsText(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
-async function loadScoredWeeks(
-  season: SeasonData,
-  settings: PoolSettings,
-  store: PoolStore,
-): Promise<ScoredWeek[]> {
-  const out: ScoredWeek[] = [];
-  for (const weekData of season.weeks) {
-    const slate = await store.getSlate(season.season, weekData.seasonType, weekData.week);
-    if (!slate || !slate.published || slate.games.length === 0) continue;
-    const entries = await store.getEntries(season.season, weekData.seasonType, weekData.week);
-    if (entries.length === 0) continue;
-    const results = await getWeekResults(season.season, weekData);
-    out.push({
-      slate,
-      label: weekData.label,
-      scores: scoreWeek(slate, entries, results, settings),
-      complete: isWeekComplete(slate, results),
-    });
-  }
-  return out;
+/** "✓ 3" / "✗ 12" / "—" — winner pick first, then the total-points distance. */
+function tbText(s: EntryScore): string {
+  if (s.tiebreakerError == null) return '—';
+  // No winner mark only in the tied-TB-game edge, where nobody picked a winner.
+  if (s.tbWinnerCorrect == null) return String(s.tiebreakerError);
+  return `${s.tbWinnerCorrect ? '✓' : '✗'} ${s.tiebreakerError}`;
 }
+
+const TB_TITLE =
+  'Tiebreaker order: right winner, then closest to the winner’s score, the loser’s score, ' +
+  'the total, then best season record';
 
 interface StandingsTabProps {
   season: SeasonData;
@@ -93,7 +84,7 @@ export function StandingsTab({
       </div>
 
       {view === 'week' ? (
-        <WeekBoard week={thisWeek} currentPlayerId={currentPlayerId} />
+        <WeekBoard week={thisWeek} currentPlayerId={currentPlayerId} poolId={store.poolId} />
       ) : (
         <SeasonBoard rows={seasonRows} weeks={weeks} currentPlayerId={currentPlayerId} />
       )}
@@ -101,7 +92,15 @@ export function StandingsTab({
   );
 }
 
-function WeekBoard({ week, currentPlayerId }: { week: ScoredWeek | null; currentPlayerId: string }) {
+function WeekBoard({
+  week,
+  currentPlayerId,
+  poolId,
+}: {
+  week: ScoredWeek | null;
+  currentPlayerId: string;
+  poolId: string | null;
+}) {
   if (!week || week.scores.length === 0) {
     return (
       <div className="results-empty">
@@ -110,12 +109,29 @@ function WeekBoard({ week, currentPlayerId }: { week: ScoredWeek | null; current
       </div>
     );
   }
+  const winners = week.scores.filter((s) => s.rank === 1);
+  // SBOTW — one league's in-joke (see pool/degenerate.ts), never shown
+  // elsewhere. The worst shared rank; the tiebreak hierarchy already sorts the
+  // bottom of the board, so anyone still tied down there genuinely co-owns it.
+  // Skipped when the worst rank IS 1, i.e. everybody tied for first.
+  const worstRank = Math.max(...week.scores.map((s) => s.rank));
+  const sbotw =
+    poolId === DEGENERATE_NATION_POOL_ID && week.complete && worstRank > 1
+      ? week.scores.filter((s) => s.rank === worstRank)
+      : [];
+  const sbotwIds = new Set(sbotw.map((s) => s.entry.playerId));
   return (
     <div className="board">
       {week.complete && week.scores.length > 0 && (
         <div className="week-winner-banner">
-          👑 {week.scores.filter((s) => s.rank === 1).map((s) => s.entry.playerName).join(' & ')}{' '}
-          {week.scores.filter((s) => s.rank === 1).length > 1 ? 'split' : 'takes'} {week.label}
+          👑 {winners.map((s) => s.entry.playerName).join(' & ')}{' '}
+          {winners.length > 1 ? 'split' : 'takes'} {week.label}
+        </div>
+      )}
+      {sbotw.length > 0 && (
+        <div className="week-winner-banner week-sbotw-banner" title="Shit Bag of the Week">
+          💩 {sbotw.map((s) => s.entry.playerName).join(' & ')}{' '}
+          {sbotw.length > 1 ? 'split the' : 'is the'} SBOTW
         </div>
       )}
       <table className="board-table">
@@ -125,7 +141,7 @@ function WeekBoard({ week, currentPlayerId }: { week: ScoredWeek | null; current
             <th>Player</th>
             <th className="num">Pts</th>
             <th className="num">W–L–P</th>
-            <th className="num" title="Tiebreaker distance (total points)">
+            <th className="num" title={TB_TITLE}>
               TB
             </th>
           </tr>
@@ -140,6 +156,7 @@ function WeekBoard({ week, currentPlayerId }: { week: ScoredWeek | null; current
               <td>
                 {s.entry.playerName}
                 {week.complete && s.rank === 1 && ' 👑'}
+                {sbotwIds.has(s.entry.playerId) && ' 💩'}
               </td>
               <td className="num strong">{pointsText(s.points)}</td>
               <td className="num">
@@ -147,7 +164,9 @@ function WeekBoard({ week, currentPlayerId }: { week: ScoredWeek | null; current
                 {s.pushes > 0 ? `–${s.pushes}` : ''}
                 {s.pending > 0 && <span className="pending-note"> ({s.pending} live)</span>}
               </td>
-              <td className="num">{s.tiebreakerError ?? '—'}</td>
+              <td className="num" title={TB_TITLE}>
+                {tbText(s)}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -166,18 +185,30 @@ function SeasonBoard({
   currentPlayerId: string;
 }) {
   if (rows.length === 0) {
+    // Week 0 alone leaves this empty on purpose — say so, or it reads as a bug
+    // to members who just played a week.
+    const onlyWeekZero = weeks.length > 0 && !weeks.some(countsTowardSeason);
     return (
       <div className="results-empty">
         <div className="results-empty-title">Season standings</div>
-        <p>Once weeks are in the books, the overall race shows up here.</p>
+        <p>
+          {onlyWeekZero
+            ? 'Week 0 was a warm-up — the season record starts with Week 1.'
+            : 'Once weeks are in the books, the overall race shows up here.'}
+        </p>
       </div>
     );
   }
+  // Only the weeks that actually feed the season record are "played" here —
+  // week 0 is a warm-up (see countsTowardSeason).
+  const played = weeks.filter(countsTowardSeason).length;
+  const hadWeekZero = played < weeks.length;
   return (
     <div className="board">
       <div className="board-sub">
-        {weeks.length} {weeks.length === 1 ? 'week' : 'weeks'} played · total points decide the
-        overall prize, weekly wins break ties
+        {played} {played === 1 ? 'week' : 'weeks'} played · total points decide the overall prize,
+        weekly wins break ties
+        {hadWeekZero && ' · Week 0 was a warm-up — season record starts Week 1'}
       </div>
       <table className="board-table">
         <thead>

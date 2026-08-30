@@ -998,6 +998,13 @@ section:first-child .day-header {
   margin-bottom: 12px;
 }
 
+/* SBOTW: same banner, muted brown — it sits under the 👑 one and must read as
+   the booby prize, not a second crown. */
+.week-sbotw-banner {
+  background: #5b4436;
+  color: #f5ede6;
+}
+
 .board-table {
   width: 100%;
   border-collapse: collapse;

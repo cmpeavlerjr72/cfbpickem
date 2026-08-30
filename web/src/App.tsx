@@ -335,7 +335,8 @@ export default function App({
         settings={settings}
         currentPlayerId={profile.playerId}
         currentPlayerName={profile.playerName}
-        weeks={season.weeks}
+        season={season}
+        store={store}
         pickBarVisible={showPickBar}
       />
       <header className="app-header">

@@ -39,10 +39,63 @@ export interface EntryScore {
    * Null until that game is final or if the player didn't guess.
    */
   tiebreakerError: number | null;
-  /** Secondary tiebreaker: sum of per-team absolute errors. */
-  tiebreakerTeamError: number | null;
+  /**
+   * Did the guess have the actually-winning team scoring more? Null until the
+   * TB game is final, when the player didn't guess, or in the (CFB-impossible)
+   * tied-game case where there is no winner to have picked.
+   */
+  tbWinnerCorrect: boolean | null;
+  /** |guess for the actually-winning team − that team's actual score|. */
+  tbWinnerScoreError: number | null;
+  /** |guess for the actually-losing team − that team's actual score|. */
+  tbLoserScoreError: number | null;
   /** 1-based, ties share a rank. */
   rank: number;
+}
+
+/**
+ * Tiebreak hierarchy for entries level on points (owner decision 2026-08-30),
+ * applied in this order:
+ *   1. picked the right WINNER of the tiebreaker game
+ *   2. closest on the WINNING team's actual score
+ *   3. closest on the LOSING team's actual score
+ *   4. closest on the TOTAL score
+ *   5. best season record so far (prior weeks, Week 1 onward)
+ * An entry with no guess is "incorrect" at level 1 and infinitely far off at
+ * 2–4, so it always sorts below anyone who guessed. Returns 0 when two entries
+ * are genuinely inseparable — that is exactly when they share a rank.
+ *
+ * @param seasonPoints cumulative points per playerId from PRIOR weeks; a
+ *   missing key (or no map at all) counts as 0.
+ */
+function compareTiebreak(
+  a: EntryScore,
+  b: EntryScore,
+  seasonPoints?: Record<string, number>,
+): number {
+  if (b.points !== a.points) return b.points - a.points;
+  // 1. right winner. `null` (no guess, or a tied TB game where nobody could
+  // have picked a winner) ranks with "incorrect" — in the tied-game case
+  // that's every entry, so the level is a no-op and 2–4 decide it.
+  const aWinner = a.tbWinnerCorrect === true ? 0 : 1;
+  const bWinner = b.tbWinnerCorrect === true ? 0 : 1;
+  if (aWinner !== bWinner) return aWinner - bWinner;
+  // 2–4. closest on the winner's score, then the loser's, then the total.
+  // Compared, not subtracted: Infinity − Infinity is NaN.
+  for (const pick of [
+    (s: EntryScore) => s.tbWinnerScoreError,
+    (s: EntryScore) => s.tbLoserScoreError,
+    (s: EntryScore) => s.tiebreakerError,
+  ]) {
+    const aErr = pick(a) ?? Number.POSITIVE_INFINITY;
+    const bErr = pick(b) ?? Number.POSITIVE_INFINITY;
+    if (aErr !== bErr) return aErr < bErr ? -1 : 1;
+  }
+  // 5. best season record so far.
+  const aSeason = seasonPoints?.[a.entry.playerId] ?? 0;
+  const bSeason = seasonPoints?.[b.entry.playerId] ?? 0;
+  if (aSeason !== bSeason) return bSeason - aSeason;
+  return 0;
 }
 
 export function scoreWeek(
@@ -50,11 +103,23 @@ export function scoreWeek(
   entries: PoolEntry[],
   results: Record<string, GameResult>,
   settings: PoolSettings,
+  /** Cumulative season points per playerId from PRIOR weeks (tiebreak level 5). */
+  seasonPoints?: Record<string, number>,
 ): EntryScore[] {
   const tbGame = slate.games.find((g) => g.isTiebreaker) ?? null;
   const tbResult = tbGame ? results[tbGame.gameId] : undefined;
   const tbFinal =
     !!tbResult && tbResult.completed && tbResult.homeScore != null && tbResult.awayScore != null;
+  // Which side actually won the tiebreaker game. A tie can't happen in CFB
+  // (overtime), but if ESPN ever hands us one there is no winner to have
+  // picked, so levels 1–3 stay null for everyone and level 4 decides.
+  const tbHomeWon: boolean | null = !tbFinal
+    ? null
+    : tbResult!.homeScore! > tbResult!.awayScore!
+      ? true
+      : tbResult!.awayScore! > tbResult!.homeScore!
+        ? false
+        : null;
 
   const scored: EntryScore[] = entries.map((entry) => {
     let wins = 0;
@@ -71,15 +136,26 @@ export function scoreWeek(
       else if (grade === 'pending') pending++;
     }
     let tiebreakerError: number | null = null;
-    let tiebreakerTeamError: number | null = null;
+    let tbWinnerCorrect: boolean | null = null;
+    let tbWinnerScoreError: number | null = null;
+    let tbLoserScoreError: number | null = null;
     if (tbFinal && entry.tiebreaker) {
       const actualHome = tbResult!.homeScore!;
       const actualAway = tbResult!.awayScore!;
-      tiebreakerError = Math.abs(
-        entry.tiebreaker.home + entry.tiebreaker.away - (actualHome + actualAway),
-      );
-      tiebreakerTeamError =
-        Math.abs(entry.tiebreaker.home - actualHome) + Math.abs(entry.tiebreaker.away - actualAway);
+      const guessHome = entry.tiebreaker.home;
+      const guessAway = entry.tiebreaker.away;
+      tiebreakerError = Math.abs(guessHome + guessAway - (actualHome + actualAway));
+      if (tbHomeWon !== null) {
+        // A guess that has the game tied picked nobody, so it's wrong here
+        // like any other miss.
+        tbWinnerCorrect = guessHome === guessAway ? false : (guessHome > guessAway) === tbHomeWon;
+        tbWinnerScoreError = Math.abs(
+          (tbHomeWon ? guessHome : guessAway) - (tbHomeWon ? actualHome : actualAway),
+        );
+        tbLoserScoreError = Math.abs(
+          (tbHomeWon ? guessAway : guessHome) - (tbHomeWon ? actualAway : actualHome),
+        );
+      }
     }
     return {
       entry,
@@ -89,32 +165,25 @@ export function scoreWeek(
       pushes,
       pending,
       tiebreakerError,
-      tiebreakerTeamError,
+      tbWinnerCorrect,
+      tbWinnerScoreError,
+      tbLoserScoreError,
       rank: 0,
     };
   });
 
-  // Points first; among equals the tiebreaker guess (closest total, then
-  // closest per-team) separates them; entries missing a guess sort last.
-  scored.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    const aErr = a.tiebreakerError ?? Number.POSITIVE_INFINITY;
-    const bErr = b.tiebreakerError ?? Number.POSITIVE_INFINITY;
-    if (aErr !== bErr) return aErr - bErr;
-    const aTeam = a.tiebreakerTeamError ?? Number.POSITIVE_INFINITY;
-    const bTeam = b.tiebreakerTeamError ?? Number.POSITIVE_INFINITY;
-    if (aTeam !== bTeam) return aTeam - bTeam;
-    return a.entry.playerName.localeCompare(b.entry.playerName);
-  });
+  // Points first, then the five-level tiebreak hierarchy. The name compare is
+  // display determinism only — it never affects rank.
+  scored.sort(
+    (a, b) =>
+      compareTiebreak(a, b, seasonPoints) || a.entry.playerName.localeCompare(b.entry.playerName),
+  );
 
   let rank = 0;
   let prev: EntryScore | null = null;
   scored.forEach((s, i) => {
-    const tiedWithPrev =
-      prev !== null &&
-      s.points === prev.points &&
-      (s.tiebreakerError ?? Infinity) === (prev.tiebreakerError ?? Infinity) &&
-      (s.tiebreakerTeamError ?? Infinity) === (prev.tiebreakerTeamError ?? Infinity);
+    // Ties share a rank only when every level came out equal.
+    const tiedWithPrev = prev !== null && compareTiebreak(s, prev, seasonPoints) === 0;
     rank = tiedWithPrev ? rank : i + 1;
     s.rank = rank;
     prev = s;
@@ -149,9 +218,20 @@ export interface ScoredWeek {
   complete: boolean;
 }
 
+/**
+ * Owner decision 2026-08-30: **season record starts Week 1.** Week 0 is the
+ * league's warm-up week — its weekly board and weekly winner stand exactly as
+ * they are, but it contributes nothing to the season race (no points, no
+ * W–L–P, no weeks played, no weekly-win credit).
+ */
+export function countsTowardSeason(week: ScoredWeek): boolean {
+  return week.slate.week !== 0;
+}
+
 export function seasonStandings(weeks: ScoredWeek[]): SeasonRow[] {
   const rows = new Map<string, SeasonRow>();
   for (const wk of weeks) {
+    if (!countsTowardSeason(wk)) continue;
     for (const s of wk.scores) {
       let row = rows.get(s.entry.playerId);
       if (!row) {

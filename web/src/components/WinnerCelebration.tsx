@@ -11,23 +11,27 @@
  *      follow-up, 2026-08-29). It renders purely off a localStorage record so
  *      it survives the app's own week-selector rolling forward past the win.
  *
- * Trigger logic is NOT reimplemented here: both call the exact same
- * `isWeekComplete` / `scoreWeek` functions the Standings tab uses (see
- * StandingsTab.tsx's loadScoredWeeks, whose guards — published, non-empty
- * slate, at least one entry — are mirrored below), so neither can ever crown
- * a "winner" the Standings tab itself disagrees with.
+ * Trigger logic is NOT reimplemented here — as of 2026-08-30 that's true by
+ * construction: the mount-time sweep calls `pool/scoredWeeks.loadScoredWeeks`,
+ * the very function the Standings tab renders from, so neither can crown a
+ * "winner" the Standings tab disagrees with. The live current-week path still
+ * calls the same `isWeekComplete` / `scoreWeek` pair with the loader's guards
+ * (published, non-empty slate, at least one entry) mirrored inline.
+ *
+ * The sweep exists because detection used to look ONLY at the currently loaded
+ * week, while the app's week selector auto-advances ~12h after a week's last
+ * kickoff — so the winner who opened the app the next morning was already on
+ * next week and never saw a thing (bug, 2026-08-30).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { WeekData } from '../types';
+import type { SeasonData, WeekData } from '../types';
 import type { WeekResults } from '../results';
 import type { PoolEntry, PoolSettings, WeekSlate } from '../pool/types';
+import type { PoolStore } from '../pool/store';
+import type { ScoredWeek } from '../pool/scoring';
 import { isWeekComplete, scoreWeek } from '../pool/scoring';
-
-/**
- * "Degenerate Nation Szn 7" — a league in-joke, not a product setting.
- * Hardcoded on purpose: this celebration must fire for this one pool only.
- */
-const CELEBRATION_POOL_ID = 'e51fe3c7-fb9d-41a1-a6c2-2dfb93eed854';
+import { loadScoredWeeks } from '../pool/scoredWeeks';
+import { DEGENERATE_NATION_POOL_ID } from '../pool/degenerate';
 
 const CONFETTI_COUNT = 12;
 
@@ -104,6 +108,29 @@ function clearBadgeRecord(poolId: string): void {
   }
 }
 
+/**
+ * The badge record for a win, WITHOUT writing it — callers check the cutoff
+ * first and then persist. The original win timestamp is preserved when the
+ * stored record is already this same win, so the no-next-week 7-day fallback
+ * doesn't keep sliding forward on every revisit.
+ */
+function winRecord(poolId: string, slate: WeekSlate, playerId: string): WinnerBadgeRecord {
+  const existing = readBadgeRecord(poolId);
+  const sameWin =
+    existing &&
+    existing.season === slate.season &&
+    existing.seasonType === slate.seasonType &&
+    existing.week === slate.week &&
+    existing.playerId === playerId;
+  return {
+    season: slate.season,
+    seasonType: slate.seasonType,
+    week: slate.week,
+    playerId,
+    wonAtIso: sameWin ? existing.wonAtIso : new Date().toISOString(),
+  };
+}
+
 const BADGE_FALLBACK_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
@@ -141,6 +168,25 @@ function readPreviewMode(): PreviewMode {
   }
 }
 
+/** The most recent week that's fully in the books, or null if none is. */
+function lastCompleteWeek(weeks: ScoredWeek[]): ScoredWeek | null {
+  for (let i = weeks.length - 1; i >= 0; i--) {
+    if (weeks[i].complete) return weeks[i];
+  }
+  return null;
+}
+
+/** What the full-screen overlay says, whoever decided to show it. */
+interface OverlayContent {
+  name: string;
+  record: string;
+  weekLabel: string;
+}
+
+function recordText(score: { wins: number; losses: number; pushes: number }): string {
+  return `${score.wins}–${score.losses}${score.pushes > 0 ? `–${score.pushes}` : ''}`;
+}
+
 interface WinnerCelebrationProps {
   /** PoolStore.poolId — null in offline/local mode, where there is no pool row to match. */
   poolId: string | null;
@@ -153,11 +199,14 @@ interface WinnerCelebrationProps {
   /** Display name of the signed-in member — used for the ?celebrate=preview graphic. */
   currentPlayerName: string;
   /**
-   * The full bundled season's weeks, so the persistent badge can look up
+   * The full bundled season: `season.weeks` lets the persistent badge look up
    * "next week's first kickoff" for whatever week is in the STORED record —
-   * which, after rollover, is no longer the currently-loaded `week`/`slate`.
+   * which, after rollover, is no longer the currently-loaded `week`/`slate` —
+   * and the whole thing feeds the mount-time sweep's loadScoredWeeks call.
    */
-  weeks: WeekData[];
+  season: SeasonData;
+  /** Same store Standings reads from; the sweep loads past weeks through it. */
+  store: PoolStore;
   /** So the badge can dock above the pick bar instead of overlapping it. */
   pickBarVisible: boolean;
 }
@@ -171,12 +220,13 @@ export function WinnerCelebration({
   settings,
   currentPlayerId,
   currentPlayerName,
-  weeks,
+  season,
+  store,
   pickBarVisible,
 }: WinnerCelebrationProps) {
   const [previewMode] = useState<PreviewMode>(readPreviewMode);
 
-  const eligiblePool = poolId === CELEBRATION_POOL_ID;
+  const eligiblePool = poolId === DEGENERATE_NATION_POOL_ID;
 
   // Mirrors StandingsTab's loadScoredWeeks guards exactly (published slate,
   // at least one game, at least one entry) before handing off to the same
@@ -191,14 +241,30 @@ export function WinnerCelebration({
   }, [eligiblePool, slate, entries, results, settings, currentPlayerId]);
 
   // ---- one-time overlay visibility ----
-  const [overlayVisible, setOverlayVisible] = useState(previewMode === 'preview');
+  // Two paths can raise the overlay (the live current-week detection and the
+  // mount-time sweep), so the state records WHICH one owns it: the current-week
+  // effect may only take DOWN its own overlay when the win stops applying —
+  // otherwise a slate refetch would wipe a swept celebration off the screen.
+  // The sweep never displaces one that's already up; a live win detected after
+  // it does take over, since that's the fresher news and the swept week keeps
+  // its corner badge either way.
+  const [overlay, setOverlay] = useState<{ source: 'week' | 'sweep'; content: OverlayContent } | null>(
+    null,
+  );
+  const [previewVisible, setPreviewVisible] = useState(previewMode === 'preview');
+  /**
+   * The celebrated key both paths have already resolved this mount. Together
+   * with the localStorage flag it's what keeps them from double-firing: whoever
+   * gets there first marks the key, and the other one bails on seeing it (the
+   * ref covers the case where storage is blocked and the flag can't persist).
+   */
   const decidedKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (previewMode) return; // preview modes never touch the celebrated flag
     const key = poolId && slate && myWin ? celebratedKey(poolId, slate) : null;
     if (!key) {
-      setOverlayVisible(false);
+      setOverlay((cur) => (cur?.source === 'week' ? null : cur));
       return;
     }
     if (decidedKeyRef.current === key) return;
@@ -207,8 +273,11 @@ export function WinnerCelebration({
     // Set the flag immediately — before the reveal even renders — so a
     // reload mid-animation (or mid-dismiss) never replays it.
     markCelebrated(key);
-    setOverlayVisible(true);
-  }, [previewMode, poolId, slate, myWin]);
+    setOverlay({
+      source: 'week',
+      content: { name: myWin!.entry.playerName, record: recordText(myWin!), weekLabel: week.label },
+    });
+  }, [previewMode, poolId, slate, myWin, week.label]);
 
   // No auto-dismiss (owner feedback 2026-08-29): she loops until the ✕ is
   // pressed. The ✕ is the ONLY dismiss — a stray scrim tap can't burn the
@@ -218,7 +287,7 @@ export function WinnerCelebration({
   const [badge, setBadge] = useState<{ record: WinnerBadgeRecord; cutoff: number } | null>(null);
 
   const loadBadge = useCallback(() => {
-    if (!poolId || poolId !== CELEBRATION_POOL_ID) {
+    if (!poolId || poolId !== DEGENERATE_NATION_POOL_ID) {
       setBadge(null);
       return;
     }
@@ -227,14 +296,14 @@ export function WinnerCelebration({
       setBadge(null);
       return;
     }
-    const cutoff = badgeCutoff(record, weeks);
+    const cutoff = badgeCutoff(record, season.weeks);
     if (Date.now() >= cutoff) {
       clearBadgeRecord(poolId);
       setBadge(null);
       return;
     }
     setBadge({ record, cutoff });
-  }, [poolId, currentPlayerId, weeks]);
+  }, [poolId, currentPlayerId, season.weeks]);
 
   useEffect(() => {
     if (previewMode) return; // preview modes never read/write the real badge record
@@ -250,23 +319,68 @@ export function WinnerCelebration({
   useEffect(() => {
     if (previewMode) return;
     if (!poolId || !myWin || !slate) return;
-    const existing = readBadgeRecord(poolId);
-    const sameWin =
-      existing &&
-      existing.season === slate.season &&
-      existing.seasonType === slate.seasonType &&
-      existing.week === slate.week &&
-      existing.playerId === currentPlayerId;
-    const record: WinnerBadgeRecord = {
-      season: slate.season,
-      seasonType: slate.seasonType,
-      week: slate.week,
-      playerId: currentPlayerId,
-      wonAtIso: sameWin ? existing.wonAtIso : new Date().toISOString(),
-    };
-    writeBadgeRecord(poolId, record);
+    writeBadgeRecord(poolId, winRecord(poolId, slate, currentPlayerId));
     loadBadge();
   }, [previewMode, poolId, myWin, slate, currentPlayerId, loadBadge]);
+
+  // ---- mount-time sweep: the win the week selector already rolled past ----
+  // Runs once per mount (App remounts per league), for the one eligible pool
+  // only. Everything it can decide — is the week complete, who is rank 1 — it
+  // decides with the SAME loader the Standings tab renders from.
+  const sweptRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    // Re-armed on every mount because StrictMode tears the first one down.
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (previewMode) return; // preview modes never read/write real storage
+    if (!poolId || poolId !== DEGENERATE_NATION_POOL_ID) return;
+    if (sweptRef.current) return;
+    sweptRef.current = true;
+    loadScoredWeeks(season, settings, store, { onlyStartedWeeks: true })
+      .then((scoredWeeks) => {
+        // If the member left the league (or the app) while this was in flight,
+        // stop: marking a week celebrated without showing it burns the reveal.
+        if (!mountedRef.current) return;
+        const lastComplete = lastCompleteWeek(scoredWeeks);
+        if (!lastComplete) return;
+        const mine = lastComplete.scores.find((s) => s.entry.playerId === currentPlayerId);
+        if (!mine || mine.rank !== 1) return;
+        const record = winRecord(poolId, lastComplete.slate, currentPlayerId);
+        // Past the badge window (next week has kicked off) = stale news: no
+        // badge, and no retroactive party either.
+        if (Date.now() >= badgeCutoff(record, season.weeks)) return;
+        writeBadgeRecord(poolId, record);
+        loadBadge();
+        const key = celebratedKey(poolId, lastComplete.slate);
+        // Same guards as the current-week path, in the same order — whichever
+        // path resolves this key first is the one that shows it.
+        if (decidedKeyRef.current === key || alreadyCelebrated(key)) return;
+        decidedKeyRef.current = key;
+        markCelebrated(key);
+        // Never displace an overlay the current-week path already raised.
+        setOverlay(
+          (cur) =>
+            cur ?? {
+              source: 'sweep',
+              content: {
+                name: mine.entry.playerName,
+                record: recordText(mine),
+                weekLabel: lastComplete.label,
+              },
+            },
+        );
+      })
+      .catch(() => {
+        // Best effort — a failed fetch just means no retroactive celebration.
+      });
+  }, [previewMode, poolId, season, settings, store, currentPlayerId, loadBadge]);
 
   // Live-expire right at the cutoff (not just "on next check") — a single
   // bounded timer (next week's kickoff or the 7-day fallback are always well
@@ -305,17 +419,17 @@ export function WinnerCelebration({
   }, [previewMode, slate, entries, results, settings, currentPlayerId, currentPlayerName, week]);
 
   // ---- assemble what actually renders ----
-  const overlayContent =
+  const overlayContent: OverlayContent | null =
     previewMode === 'preview'
-      ? previewOverlayContent
-      : myWin
-        ? {
-            name: myWin.entry.playerName,
-            record: `${myWin.wins}–${myWin.losses}${myWin.pushes > 0 ? `–${myWin.pushes}` : ''}`,
-            weekLabel: week.label,
-          }
-        : null;
-  const showOverlay = overlayVisible && overlayContent != null;
+      ? previewVisible
+        ? previewOverlayContent
+        : null
+      : (overlay?.content ?? null);
+  const showOverlay = overlayContent != null;
+  const dismissOverlay = () => {
+    if (previewMode === 'preview') setPreviewVisible(false);
+    else setOverlay(null);
+  };
 
   const showBadge = previewMode === 'badge' || badge != null;
   const badgeWeekNum = previewMode === 'badge' ? week.week : (badge?.record.week ?? week.week);
@@ -362,7 +476,7 @@ export function WinnerCelebration({
             aria-label="Dismiss"
             onClick={(e) => {
               e.stopPropagation();
-              setOverlayVisible(false);
+              dismissOverlay();
             }}
           >
             &times;
