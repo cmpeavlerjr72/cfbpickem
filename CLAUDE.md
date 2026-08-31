@@ -64,9 +64,18 @@ tiebreaker fix / gamecast pick-type filter (a1a0c1d).
   both are idempotent (`spreads_locked_at` guards). Pre-lock, clients overlay live ESPN
   lines for display; grading always uses the stored locked numbers. No line by lock
   time = plays as PK. One game is the College GameDay tiebreaker (guess the final
-  score, closest total wins). 1 pt/game, push = ½ pt (configurable). Weekly winners +
-  season standings (total pts, weekly wins break ties). SU pools show Kalshi moneyline
-  odds (`KXNCAAFGAME`) instead of spread odds.
+  score; points ties break in order — correct winner picked → closest winning-team
+  score → closest losing-team score → closest total → best season record, owner
+  decision 2026-08-30, `compareTiebreak` in `web/src/pool/scoring.ts`). 1 pt/game,
+  push = ½ pt (configurable). Weekly winners + season standings (total pts, weekly
+  wins break ties). **Week 0 never counts toward season standings** — the season
+  record starts Week 1 (`countsTowardSeason`); Week 0's weekly board/winner stand.
+  SU pools show Kalshi moneyline odds (`KXNCAAFGAME`) instead of spread odds.
+  League in-jokes (the weekly-winner dancer celebration, the 💩 SBOTW callout) are
+  hardcoded to the owner's league via `web/src/pool/degenerate.ts` — never generic
+  pool settings. `profiles.real_name` (optional, owner-edited on the Dashboard) is
+  preferred over `display_name` on leaderboards only; every other surface shows the
+  display name.
 - **Pick deadline: PER GAME — each pick is editable until its own game kicks off**
   (owner decision 2026-08-29, reversing the earlier whole-slate rule after the first
   live game day). The cheat-proofing invariant that must never be split: a pick LOCKS
