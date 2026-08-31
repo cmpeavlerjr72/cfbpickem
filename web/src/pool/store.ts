@@ -163,6 +163,7 @@ interface SlateRow {
 interface WeekEntryRow {
   player_id: string;
   player_name: string;
+  real_name: string | null;
   picks: PoolEntry['picks'] | null;
   tiebreaker: PoolEntry['tiebreaker'];
   updated_at: string;
@@ -283,6 +284,7 @@ export class SupabasePoolStore implements PoolStore {
     return (data as WeekEntryRow[]).map((row) => ({
       playerId: row.player_id,
       playerName: row.player_name,
+      realName: row.real_name,
       picks: row.picks ?? {},
       tiebreaker: row.tiebreaker,
       updatedAt: row.updated_at,

@@ -45,6 +45,14 @@ export interface TiebreakerGuess {
 export interface PoolEntry {
   playerId: string;
   playerName: string;
+  /**
+   * The player's optional "real name" from their profile. Leaderboards prefer
+   * this over playerName when it's set; null/absent falls back to playerName.
+   * Every other surface (pick sheets, scoreboard, celebration overlay,
+   * commissioner selector) keeps using playerName — leave this field alone
+   * anywhere but the leaderboard.
+   */
+  realName?: string | null;
   /** gameId -> side picked to cover. */
   picks: Record<string, PickSide>;
   tiebreaker: TiebreakerGuess | null;

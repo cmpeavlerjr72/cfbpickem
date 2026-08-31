@@ -16,6 +16,7 @@ export function Dashboard({ account, onSelect }: DashboardProps) {
   const [joinCode, setJoinCode] = useState('');
   const [newName, setNewName] = useState('');
   const [displayName, setDisplayName] = useState(account.displayName);
+  const [realName, setRealName] = useState(account.realName ?? '');
   const [newPassword, setNewPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +68,18 @@ export function Dashboard({ account, onSelect }: DashboardProps) {
       if (err) throw new Error(err.message);
       await account.refresh();
       return 'Display name updated.';
+    });
+
+  const saveRealName = () =>
+    run(async () => {
+      const name = realName.trim();
+      const { error: err } = await supabase!
+        .from('profiles')
+        .update({ real_name: name || null })
+        .eq('id', account.userId);
+      if (err) throw new Error(err.message);
+      await account.refresh();
+      return name ? 'Real name updated.' : 'Real name cleared.';
     });
 
   const savePassword = () =>
@@ -193,6 +206,26 @@ export function Dashboard({ account, onSelect }: DashboardProps) {
             </button>
           </div>
           <p className="dash-hint">Your name on every league’s scoreboard and standings.</p>
+          <div className="dash-row">
+            <input
+              className="setup-input dash-input"
+              placeholder="Real name (shown on leaderboards)"
+              value={realName}
+              maxLength={60}
+              onChange={(e) => setRealName(e.target.value)}
+            />
+            <button
+              type="button"
+              className="ghost-btn"
+              disabled={busy || realName.trim() === (account.realName ?? '')}
+              onClick={saveRealName}
+            >
+              Save
+            </button>
+          </div>
+          <p className="dash-hint">
+            Optional — when set, leaderboards show this instead of your display name.
+          </p>
           <div className="dash-row">
             <input
               className="setup-input dash-input"

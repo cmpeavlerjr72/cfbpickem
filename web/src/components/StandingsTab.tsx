@@ -14,6 +14,17 @@ function pointsText(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
+/**
+ * Leaderboard display name: the player's real name when they've set one,
+ * else their display name. Leaderboards only — every other surface (pick
+ * sheets, scoreboard, celebration overlay, commissioner selector) uses
+ * playerName directly and should stay that way.
+ */
+function boardName(x: { realName?: string | null; playerName: string }): string {
+  const real = x.realName?.trim();
+  return real ? real : x.playerName;
+}
+
 /** "✓ 3" / "✗ 12" / "—" — winner pick first, then the total-points distance. */
 function tbText(s: EntryScore): string {
   if (s.tiebreakerError == null) return '—';
@@ -124,13 +135,13 @@ function WeekBoard({
     <div className="board">
       {week.complete && week.scores.length > 0 && (
         <div className="week-winner-banner">
-          👑 {winners.map((s) => s.entry.playerName).join(' & ')}{' '}
+          👑 {winners.map((s) => boardName(s.entry)).join(' & ')}{' '}
           {winners.length > 1 ? 'split' : 'takes'} {week.label}
         </div>
       )}
       {sbotw.length > 0 && (
         <div className="week-winner-banner week-sbotw-banner" title="Shit Bag of the Week">
-          💩 {sbotw.map((s) => s.entry.playerName).join(' & ')}{' '}
+          💩 {sbotw.map((s) => boardName(s.entry)).join(' & ')}{' '}
           {sbotw.length > 1 ? 'split the' : 'is the'} SBOTW
         </div>
       )}
@@ -154,7 +165,7 @@ function WeekBoard({
             >
               <td className="num">{s.rank}</td>
               <td>
-                {s.entry.playerName}
+                {boardName(s.entry)}
                 {week.complete && s.rank === 1 && ' 👑'}
                 {sbotwIds.has(s.entry.playerId) && ' 💩'}
               </td>
@@ -226,7 +237,7 @@ function SeasonBoard({
           {rows.map((r) => (
             <tr key={r.playerId} className={r.playerId === currentPlayerId ? 'me' : ''}>
               <td className="num">{r.rank}</td>
-              <td>{r.playerName}</td>
+              <td>{boardName(r)}</td>
               <td className="num strong">{pointsText(r.totalPoints)}</td>
               <td className="num">{r.weeklyWins || '—'}</td>
               <td className="num">

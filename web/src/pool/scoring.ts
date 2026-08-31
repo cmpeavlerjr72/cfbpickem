@@ -201,6 +201,8 @@ export function isWeekComplete(slate: WeekSlate, results: Record<string, GameRes
 export interface SeasonRow {
   playerId: string;
   playerName: string;
+  /** Same fallback rule as PoolEntry.realName: leaderboards prefer this, null falls back to playerName. */
+  realName: string | null;
   totalPoints: number;
   wins: number;
   losses: number;
@@ -238,6 +240,7 @@ export function seasonStandings(weeks: ScoredWeek[]): SeasonRow[] {
         row = {
           playerId: s.entry.playerId,
           playerName: s.entry.playerName,
+          realName: null,
           totalPoints: 0,
           wins: 0,
           losses: 0,
@@ -249,6 +252,7 @@ export function seasonStandings(weeks: ScoredWeek[]): SeasonRow[] {
         rows.set(s.entry.playerId, row);
       }
       row.playerName = s.entry.playerName;
+      row.realName = s.entry.realName ?? row.realName ?? null;
       row.totalPoints += s.points;
       row.wins += s.wins;
       row.losses += s.losses;

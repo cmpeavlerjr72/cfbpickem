@@ -13,6 +13,8 @@ import type { PoolMembership } from '../pool/types';
 export interface AccountContext {
   userId: string;
   displayName: string;
+  /** Optional "real name" for leaderboards; null when not set. */
+  realName: string | null;
   memberships: PoolMembership[];
   /** Re-fetch profile + memberships (after a name change, join, or create). */
   refresh: () => Promise<void>;
@@ -51,7 +53,7 @@ export function AuthGate({ children }: { children: (ctx: AccountContext) => Reac
       const userId = s.user.id;
       const { data: prof } = await supabase!
         .from('profiles')
-        .select('display_name')
+        .select('display_name, real_name')
         .eq('id', userId)
         .maybeSingle();
       if (!prof) {
@@ -73,6 +75,7 @@ export function AuthGate({ children }: { children: (ctx: AccountContext) => Reac
       setCtx({
         userId,
         displayName: prof.display_name,
+        realName: prof.real_name ?? null,
         memberships,
         refresh: async () => resolveAccount(s),
         signOut,
