@@ -83,7 +83,17 @@ tiebreaker fix / gamecast pick-type filter (a1a0c1d).
   (`week_entries` RPC filters server-side), so an editable pick is never readable.
   The tiebreaker locks AND reveals at the TIEBREAKER game's kickoff. Enforced by the
   `enforce_pick_locks` trigger server-side (per-changed-pick diff, migration
-  20260829173000) and mirrored in the UI (`lockedGameIds` in `App.tsx`). **Commissioner override:** the commish can enter/adjust any OTHER member's picks
+  20260829173000) and mirrored in the UI (`lockedGameIds` in `App.tsx`).
+  **Per-pool lock rule `pools.pick_lock`** (owner decision 2026-09-19, migration
+  20260919140000): `'kickoff'` (default, the rule above) or `'saturday_noon'` —
+  non-Saturday games still lock at their own kickoff, every SATURDAY game locks AND
+  reveals together at 12:00 PM ET (a pre-noon Saturday kick locks at its kickoff;
+  "Saturday" = ET football day, kickoff − 6h, so a Hawaii midnight-ET kick counts).
+  One definition server-side (`pick_lock_at()`, used by the trigger and
+  `week_entries`), one client mirror (`web/src/pool/locks.ts`) — change them together.
+  Set by SQL only, deliberately no commissioner toggle: flipping a pool back to
+  `'kickoff'` between Saturday noon and the last kick would re-open picks the league
+  has already seen. **Commissioner override:** the commish can enter/adjust any OTHER member's picks
   at any time (people text in picks they forgot to enter) via the "Entering picks for…"
   selector on the Picks tab; the trigger bypasses locks only when a commissioner writes
   someone else's entry — their own sheet locks like everyone's. The commish also sees all

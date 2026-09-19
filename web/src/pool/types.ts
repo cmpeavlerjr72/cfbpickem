@@ -90,6 +90,10 @@ export interface PoolMembership {
   isCommissioner: boolean;
 }
 
+/** 'kickoff' = each game at its own kickoff; 'saturday_noon' = non-Saturday
+ * games at kickoff, all Saturday games together at 12:00 PM ET. */
+export type PickLockMode = 'kickoff' | 'saturday_noon';
+
 export interface PoolSettings {
   name: string;
   /** Target games per weekly slate — a guide for the commissioner, not a hard cap. */
@@ -98,6 +102,10 @@ export interface PoolSettings {
   pushPoints: number;
   /** Against the spread or straight-up. */
   pickType: PickType;
+  /** When picks lock + reveal (see pool/locks.ts). Absent = 'kickoff'. Set by
+   * SQL on the pool row, never from the UI — flipping it mid-Saturday would
+   * re-open picks the league has already seen. */
+  pickLock?: PickLockMode;
 }
 
 export const DEFAULT_SETTINGS: PoolSettings = {

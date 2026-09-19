@@ -11,8 +11,15 @@
 import { useMemo, useState } from 'react';
 import type { Game, Team, WeekData } from '../types';
 import type { GameResult, WeekResults } from '../results';
-import { isGameLocked } from '../results';
-import type { CoverOdds, PickSide, PoolEntry, SlateGame, WeekSlate } from '../pool/types';
+import { isPickLocked } from '../pool/locks';
+import type {
+  CoverOdds,
+  PickLockMode,
+  PickSide,
+  PoolEntry,
+  SlateGame,
+  WeekSlate,
+} from '../pool/types';
 import { coverMargin, gradeAts } from '../pool/scoring';
 import { AtsGameCard } from './AtsGameCard';
 import type { GamecastSituation } from '../gamecast';
@@ -61,6 +68,8 @@ interface ScoreboardTabProps {
   entries: PoolEntry[];
   results: WeekResults;
   coverOdds: Record<string, CoverOdds>;
+  /** The pool's lock rule: picks reveal when they lock (pool/locks.ts). */
+  pickLock: PickLockMode;
   currentPlayerId: string;
   isCommissioner: boolean;
 }
@@ -71,6 +80,7 @@ export function ScoreboardTab({
   entries,
   results,
   coverOdds,
+  pickLock,
   currentPlayerId,
   isCommissioner,
 }: ScoreboardTabProps) {
@@ -122,6 +132,7 @@ export function ScoreboardTab({
         items={items}
         entries={entries}
         results={results}
+        pickLock={pickLock}
         isCommissioner={isCommissioner}
         currentPlayerId={currentPlayerId}
       />
@@ -147,7 +158,7 @@ export function ScoreboardTab({
               slateGame={sg}
               pickType={slate.pickType ?? 'ats'}
               result={result}
-              locked={isGameLocked(game, result)}
+              locked={isPickLocked(game, result, pickLock)}
               readOnly
               pickedSide={myEntry?.picks[game.id] ?? null}
               coverOdds={coverOdds[game.id] ?? null}
@@ -329,6 +340,7 @@ interface PicksGridProps {
   items: { sg: SlateGame; game: Game }[];
   entries: PoolEntry[];
   results: WeekResults;
+  pickLock: PickLockMode;
   isCommissioner: boolean;
   currentPlayerId: string;
 }
@@ -337,6 +349,7 @@ function PicksGrid({
   items,
   entries,
   results,
+  pickLock,
   isCommissioner,
   currentPlayerId,
 }: PicksGridProps) {
@@ -346,7 +359,7 @@ function PicksGrid({
       sg,
       game,
       result,
-      kicked: isGameLocked(game, result),
+      kicked: isPickLocked(game, result, pickLock),
       live: result?.state === 'in',
       final: !!result?.completed,
       started: !!result && result.state !== 'pre',
@@ -363,7 +376,9 @@ function PicksGrid({
     isCommissioner && kickedCount < cols.length
       ? `${sheets} · visible to you as commissioner`
       : kickedCount < cols.length
-        ? `${sheets} · each pick shows once its game kicks off`
+        ? pickLock === 'saturday_noon'
+          ? `${sheets} · Saturday picks show at noon ET, others once their game kicks off`
+          : `${sheets} · each pick shows once its game kicks off`
         : sheets;
   const anyHidden =
     !isCommissioner &&

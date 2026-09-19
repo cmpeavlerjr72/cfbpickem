@@ -209,7 +209,7 @@ export class SupabasePoolStore implements PoolStore {
   async getSettings(): Promise<PoolSettings> {
     const { data, error } = await this.db
       .from('pools')
-      .select('name, slate_size, push_points, pick_type')
+      .select('name, slate_size, push_points, pick_type, pick_lock')
       .eq('id', this.poolId)
       .single();
     if (error || !data) return DEFAULT_SETTINGS;
@@ -218,6 +218,7 @@ export class SupabasePoolStore implements PoolStore {
       slateSize: data.slate_size,
       pushPoints: Number(data.push_points),
       pickType: data.pick_type === 'su' ? 'su' : 'ats',
+      pickLock: data.pick_lock === 'saturday_noon' ? 'saturday_noon' : 'kickoff',
     };
   }
 

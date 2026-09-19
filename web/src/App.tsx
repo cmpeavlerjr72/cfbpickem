@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import gamesJson from './data/games.json';
 import type { Game, SeasonData, WeekData } from './types';
-import { fetchWeekScoreboard, isGameLocked } from './results';
+import { fetchWeekScoreboard } from './results';
+import { isPickLocked, pickLockAt } from './pool/locks';
 import { useWeekResults } from './live';
 import { spreadLockTime } from './pool/spreads';
 import type { CoverOdds, PickSide, PoolEntry, PoolProfile, PoolSettings, WeekSlate } from './pool/types';
@@ -116,39 +117,44 @@ export default function App({
   // Picks lock PER GAME at that game's own kickoff (owner decision
   // 2026-08-29, replacing the old whole-slate freeze at the week's first
   // kickoff). A member can keep filling in later games after early ones
-  // start. The enforce_pick_locks trigger enforces the same per-game rule
-  // server-side; only a commissioner writing ANOTHER member's entry is
-  // exempt.
+  // start. Pools on the 'saturday_noon' rule (settings.pickLock, owner
+  // decision 2026-09-19) lock every Saturday game together at noon ET
+  // instead — pool/locks.ts. The enforce_pick_locks trigger enforces the
+  // same rule server-side; only a commissioner writing ANOTHER member's
+  // entry is exempt.
   const lockedGameIds = useMemo(() => {
     const locked = new Set<string>();
     if (!slate?.published) return locked;
     for (const sg of slate.games) {
       const game = gamesById.get(sg.gameId);
-      // isGameLocked reads Date.now() itself; `now` is in the dep list so
+      // isPickLocked reads Date.now() itself; `now` is in the dep list so
       // this recomputes on the 30s tick as well as on fresh live results.
-      if (game && isGameLocked(game, results[sg.gameId])) locked.add(sg.gameId);
+      if (game && isPickLocked(game, results[sg.gameId], settings.pickLock)) {
+        locked.add(sg.gameId);
+      }
     }
     return locked;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slate, gamesById, results, now]);
+  }, [slate, gamesById, results, now, settings.pickLock]);
 
-  // The tiebreaker follows the TIEBREAKER GAME's kickoff, not the slate's.
+  // The tiebreaker follows the TIEBREAKER GAME's lock, not the slate's.
   const tiebreakerGameId = useMemo(
     () => slate?.games.find((g) => g.isTiebreaker)?.gameId ?? null,
     [slate],
   );
   const tiebreakerLocked = tiebreakerGameId != null && lockedGameIds.has(tiebreakerGameId);
 
-  // Kickoff of the next game still open for picks (null once all have kicked).
+  // Lock time of the next game still open for picks (null once all locked).
   const nextLockAt = useMemo(() => {
     if (!slate?.published) return null;
     const upcoming = slate.games
       .filter((g) => !lockedGameIds.has(g.gameId))
       .map((g) => gamesById.get(g.gameId)?.date)
       .filter((d): d is string => !!d)
-      .sort();
-    return upcoming[0] ? new Date(upcoming[0]) : null;
-  }, [slate, gamesById, lockedGameIds]);
+      .map((d) => pickLockAt(d, settings.pickLock).getTime())
+      .sort((a, b) => a - b);
+    return upcoming.length ? new Date(upcoming[0]) : null;
+  }, [slate, gamesById, lockedGameIds, settings.pickLock]);
 
   // Scoreboard reveal is still a single boolean on that tab (owned elsewhere):
   // true once ANY slate game has kicked, which is what the old whole-slate
@@ -275,7 +281,9 @@ export default function App({
     store.saveEntry(season.season, week.seasonType, week.week, next).catch((err) => {
       alert(
         err instanceof Error && err.message.includes('locked')
-          ? 'Too late — that game has already kicked off. Each game locks at its own kickoff.'
+          ? settings.pickLock === 'saturday_noon'
+            ? 'Too late — picks for that game have closed. Saturday games lock at noon ET; every other game locks at its kickoff.'
+            : 'Too late — that game has already kicked off. Each game locks at its own kickoff.'
           : `Couldn’t save the pick: ${err instanceof Error ? err.message : 'unknown error'}`,
       );
       refresh();
@@ -446,6 +454,7 @@ export default function App({
               results={results}
               coverOdds={coverOdds}
               lockedGameIds={lockedGameIds}
+              pickLock={settings.pickLock ?? 'kickoff'}
               tiebreakerLocked={tiebreakerLocked}
               nextLockAt={nextLockAt}
               overriding={overriding}
@@ -461,6 +470,7 @@ export default function App({
             entries={entries}
             results={results}
             coverOdds={coverOdds}
+            pickLock={settings.pickLock ?? 'kickoff'}
             currentPlayerId={profile.playerId}
             isCommissioner={profile.isCommissioner}
           />
@@ -534,7 +544,7 @@ export default function App({
                 alert(
                   allPicked && tiebreakerSet
                     ? `Sheet complete — ${pickedCount} picks + tiebreaker in for ${week.label}! 🔒`
-                    : `${pickedCount}/${slateGameIds.length} picks saved${tiebreakerSet ? '' : ' — don’t forget the tiebreaker'}. Each game stays open until it kicks off, so you can still fill in the rest.`,
+                    : `${pickedCount}/${slateGameIds.length} picks saved${tiebreakerSet ? '' : ' — don’t forget the tiebreaker'}. ${settings.pickLock === 'saturday_noon' ? 'Saturday games stay open until noon ET Saturday (other games until they kick off)' : 'Each game stays open until it kicks off'}, so you can still fill in the rest.`,
                 )
               }
             >

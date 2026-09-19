@@ -10,6 +10,8 @@ import type { Game, WeekData } from '../types';
 import type { WeekResults } from '../results';
 import type { PickSide, PoolEntry, WeekSlate } from '../pool/types';
 import { spreadLockTime } from '../pool/spreads';
+import { pickLockAt } from '../pool/locks';
+import type { PickLockMode } from '../pool/types';
 import type { CoverOdds } from './AtsGameCard';
 import { AtsGameCard } from './AtsGameCard';
 
@@ -19,11 +21,13 @@ interface PickSheetProps {
   entry: PoolEntry;
   results: WeekResults;
   coverOdds?: Record<string, CoverOdds>;
-  /** Slate game ids that have already kicked — those picks are frozen. */
+  /** Slate game ids whose picks are frozen (kicked, or past the pool's lock time). */
   lockedGameIds: Set<string>;
+  /** The pool's lock rule — drives the deadline copy only; locking itself is lockedGameIds. */
+  pickLock: PickLockMode;
   /** True once the TIEBREAKER game itself has kicked off. */
   tiebreakerLocked: boolean;
-  /** Kickoff of the next game still open for picks (null = all locked). */
+  /** Lock time of the next game still open for picks (null = all locked). */
   nextLockAt: Date | null;
   overriding: boolean;
   onPick: (gameId: string, side: PickSide) => void;
@@ -37,6 +41,7 @@ export function PickSheet({
   results,
   coverOdds,
   lockedGameIds,
+  pickLock,
   tiebreakerLocked,
   nextLockAt,
   overriding,
@@ -152,16 +157,20 @@ export function PickSheet({
     <>
       {overriding ? null : allLocked ? (
         <div className="lines-note">
-          Every {week.label} game has kicked off — this sheet is locked.
+          {pickLock === 'saturday_noon'
+            ? `Picks have closed for every ${week.label} game — this sheet is locked.`
+            : `Every ${week.label} game has kicked off — this sheet is locked.`}
         </div>
       ) : (
         <div className="deadline-note">
-          Each game locks at its own kickoff
+          {pickLock === 'saturday_noon'
+            ? 'Saturday games all lock at noon ET Saturday; any other game locks at its own kickoff'
+            : 'Each game locks at its own kickoff'}
           {nextLockLabel ? ` — next: ${nextLockLabel}` : ''}.
           {lockedCount > 0 && ` ${lockedCount} of ${slateGames.length} already locked.`}
           {tbEntry &&
-            ` The tiebreaker locks when the ${tbMatchup} game kicks (${kickLabel(
-              tbEntry.game.date,
+            ` The tiebreaker locks with the ${tbMatchup} game (${kickLabel(
+              pickLockAt(tbEntry.game.date, pickLock),
             )}).`}
         </div>
       )}
@@ -230,7 +239,9 @@ export function PickSheet({
             </div>
             {tbLocked && (
               <p className="tb-locked-note">
-                Tiebreaker locked — the tiebreaker game has kicked off.
+                {pickLock === 'saturday_noon'
+                  ? 'Tiebreaker locked — picks for the tiebreaker game have closed.'
+                  : 'Tiebreaker locked — the tiebreaker game has kicked off.'}
               </p>
             )}
           </div>
