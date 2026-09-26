@@ -238,6 +238,15 @@ Share-sheet guide on iOS because WebKit has no install API.
   `npx supabase db push --db-url "postgresql://postgres.nczxyombguocejgurwop:<DB_PASSWORD>@aws-0-us-west-2.pooler.supabase.com:5432/postgres"`
 - After refetching season data, also regen + push the games seed:
   `node data/generate-games-migration.mjs 2026` then db push (keeps kickoff locks accurate).
+- **Refresh the schedule EVERY WEEK (Sun/Mon, before picks open) — incident 2026-09-26:**
+  ESPN only announces kickoff times ~6-12 days out; further-out games carry a
+  `T04:00Z` (12:00 AM ET) placeholder. The data had last been refreshed 08-29, so
+  on Sat 09-26 41 of 71 games showed "12am" and the lock rule (a pre-noon Saturday
+  kick locks AT kickoff) locked the whole slate from midnight, client and server.
+  Full chain: `node data/fetch-games.mjs 2026` → `sync-to-apps.mjs` →
+  `generate-games-migration.mjs` → `supabase db push` (DB password, owner) →
+  commit + push main (Render deploy). The DB push is NOT optional — the client
+  bundle only mirrors; `enforce_pick_locks` reads `public.games.kickoff`.
 - Auth = email + password (`AuthGate.tsx`), with a reset-email recovery flow
   (`resetPasswordForEmail` → `PASSWORD_RECOVERY` event → set-new-password form). Accounts
   from the old magic-link era have no password — they use "Forgot password?" to set one.
