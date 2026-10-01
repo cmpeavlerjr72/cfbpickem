@@ -76,7 +76,7 @@ export function GameCard({ game, result, locked, pickedTeamId, onPick }: GameCar
     <div className="game-card">
       <div className="game-meta">
         <span className={`game-time${live ? ' live' : ''}`}>
-          {started ? result.detail ?? 'In progress' : formatKickoff(game.date)}
+          {started ? result.detail ?? 'In progress' : game.timeTbd ? 'TBD' : formatKickoff(game.date)}
         </span>
         {game.conferenceGame && !started && <span className="conf-badge">Conf</span>}
         {locked && !started && <span className="lock-badge">Locked</span>}

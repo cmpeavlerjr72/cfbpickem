@@ -7,8 +7,9 @@ import { useWeekResults } from './live';
 import { spreadLockTime } from './pool/spreads';
 import type { CoverOdds, PickSide, PoolEntry, PoolProfile, PoolSettings, WeekSlate } from './pool/types';
 import { DEFAULT_SETTINGS } from './pool/types';
-import type { PoolStore } from './pool/store';
+import { SupabasePoolStore, type PoolStore } from './pool/store';
 import { fetchCoverOddsForSlate } from './pool/kalshi';
+import { useSeasonSchedule } from './schedule';
 import { PickSheet } from './components/PickSheet';
 import { MembersTab } from './components/MembersTab';
 import { SlateBuilder } from './components/SlateBuilder';
@@ -17,7 +18,9 @@ import { StandingsTab } from './components/StandingsTab';
 import { WinnerCelebration } from './components/WinnerCelebration';
 import './App.css';
 
-const season = gamesJson as SeasonData;
+// The bundled snapshot: first paint and the offline fallback. Inside App it
+// is overlaid with the live public.games schedule (schedule.ts).
+const bundledSeason = gamesJson as SeasonData;
 
 // Default to the first week that hasn't fully finished yet.
 function defaultWeekIndex(weeks: WeekData[]): number {
@@ -55,6 +58,10 @@ export default function App({
   );
   const [tab, setTab] = useState<Tab>('picks');
   const [commishView, setCommishView] = useState<CommishView>('slate');
+  // Every consumer below (locks, cards, slate builder, standings) reads this
+  // merged season — the one seam where the DB schedule replaces the bundle.
+  // Signed-in Supabase pools only; LocalPoolStore keeps the bundle as-is.
+  const season = useSeasonSchedule(bundledSeason, store instanceof SupabasePoolStore);
   const [weekIndex, setWeekIndex] = useState(() => defaultWeekIndex(season.weeks));
   const week = season.weeks[weekIndex];
   const [slate, setSlate] = useState<WeekSlate | null>(null);
@@ -87,7 +94,9 @@ export default function App({
     ]);
     setSlate(s);
     setEntries(e);
-  }, [store, week]);
+    // Keyed on the week's identity numbers, not the object: a schedule
+    // overlay update replaces the week object and must not blank the slate.
+  }, [store, season.season, week.seasonType, week.week]);
 
   // Load on week change, then keep fresh (other players' picks, slate
   // publishes) with a 60s poll while the tab is visible.
@@ -202,7 +211,7 @@ export default function App({
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [slate, week]);
+  }, [slate, week, season.season]);
 
   const displaySlate = useMemo<WeekSlate | null>(() => {
     if (!slate || Object.keys(liveLines).length === 0) return slate;

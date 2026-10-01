@@ -24,6 +24,9 @@ function shortMatchup(game: Game): string {
 }
 
 function kickoffLabel(game: Game): string {
+  if (game.timeTbd) {
+    return `${new Date(game.date).toLocaleDateString(undefined, { weekday: 'short' })} TBD`;
+  }
   return new Date(game.date).toLocaleString(undefined, {
     weekday: 'short',
     hour: 'numeric',

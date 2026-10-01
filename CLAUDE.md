@@ -202,7 +202,7 @@ Share-sheet guide on iOS because WebKit has no install API.
   `web/.env.local` (`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`, git-ignored).
   Without that file the app falls back to LocalPoolStore (offline single-browser mode).
 - Schema in `supabase/migrations/`: profiles, pools (+invite codes), pool_members,
-  games (kickoffs, for lock enforcement), slates, entries. RLS: players write their own
+  games (the live schedule — kickoffs for lock enforcement, refreshed hourly), slates, entries. RLS: players write their own
   entry, commissioners can also write any member's entry in their pool; opponents' picks
   come via the `week_entries` RPC which reveals each pick only once ITS game has kicked
   (commissioners always see everything); the `enforce_pick_locks` trigger rejects
@@ -236,17 +236,31 @@ Share-sheet guide on iOS because WebKit has no install API.
 - **Pushing migrations:** the direct db host is IPv6-only and unreachable from this box —
   use the pooler:
   `npx supabase db push --db-url "postgresql://postgres.nczxyombguocejgurwop:<DB_PASSWORD>@aws-0-us-west-2.pooler.supabase.com:5432/postgres"`
-- After refetching season data, also regen + push the games seed:
-  `node data/generate-games-migration.mjs 2026` then db push (keeps kickoff locks accurate).
-- **Refresh the schedule EVERY WEEK (Sun/Mon, before picks open) — incident 2026-09-26:**
-  ESPN only announces kickoff times ~6-12 days out; further-out games carry a
-  `T04:00Z` (12:00 AM ET) placeholder. The data had last been refreshed 08-29, so
-  on Sat 09-26 41 of 71 games showed "12am" and the lock rule (a pre-noon Saturday
-  kick locks AT kickoff) locked the whole slate from midnight, client and server.
-  Full chain: `node data/fetch-games.mjs 2026` → `sync-to-apps.mjs` →
-  `generate-games-migration.mjs` → `supabase db push` (DB password, owner) →
-  commit + push main (Render deploy). The DB push is NOT optional — the client
-  bundle only mirrors; `enforce_pick_locks` reads `public.games.kickoff`.
+- **The schedule refreshes itself hourly (2026-10-01, after the 09-26 and 09-30
+  midnight-lock incidents):** pg_cron `refresh-games-hourly` (:37) → Edge Function
+  `supabase/functions/refresh-games` re-reads ESPN for every week with a game in
+  [now − 1d, now + 16d] and upserts `public.games` (kickoff, `time_tbd`, full game
+  JSON in `data`, `refreshed_at`). **`public.games` is the schedule source of truth**
+  — `enforce_pick_locks` / `pick_lock_at()` / `week_entries` read it, and signed-in
+  clients overlay its rows newer than the bundle's `fetchedAt` onto `games.json`
+  (`web/src/schedule.ts`, on load + every ~15 min while visible). Invariants: an
+  existing row never changes season/season_type/week (Week 0 split); a row whose
+  stored kickoff has passed keeps its kickoff (its picks locked and revealed — moving
+  it would re-open them); a failed/empty ESPN week is skipped, never deleted. The
+  response reports per-week detail — read it when debugging, never assume.
+- **TBD kickoffs = noon ET + `timeTbd`.** ESPN gives unannounced kickoffs a
+  midnight-ET placeholder (`T04:00Z` EDT / `T05:00Z` EST) with
+  `competitions[0].timeValid === false`. Every path (`data/normalize-game.mjs`, its
+  TS copy in `refresh-games/normalize.ts` — `node data/check-normalize.mjs` asserts
+  they agree) stores 12:00 PM ET of that day instead and sets `timeTbd`; the UI shows
+  "TBD". Noon is exactly the `saturday_noon` lock and a safe early lock under
+  `kickoff`, so the lock SQL needs nothing special. Never store the raw placeholder.
+- The manual chain is now only a fallback / bundle refresh (offline first paint,
+  LocalPoolStore, far-future weeks): `node data/fetch-games.mjs 2026` →
+  `sync-to-apps.mjs` → `generate-games-migration.mjs` (writes the same columns and
+  the same locked-kickoff guard as the function) → `supabase db push` (owner's DB
+  password) → commit + push main. Deploy the function with
+  `npx supabase functions deploy refresh-games`.
 - Auth = email + password (`AuthGate.tsx`), with a reset-email recovery flow
   (`resetPasswordForEmail` → `PASSWORD_RECOVERY` event → set-new-password form). Accounts
   from the old magic-link era have no password — they use "Forgot password?" to set one.

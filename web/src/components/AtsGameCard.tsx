@@ -201,7 +201,7 @@ export function AtsGameCard({
     <div className={`game-card${slateGame.isTiebreaker ? ' tiebreaker-card' : ''}`}>
       <div className="game-meta">
         <span className={`game-time${live ? ' live' : ''}`}>
-          {started ? result!.detail ?? 'In progress' : formatKickoff(game.date)}
+          {started ? result!.detail ?? 'In progress' : game.timeTbd ? 'TBD' : formatKickoff(game.date)}
         </span>
         {slateGame.isTiebreaker && <span className="tb-badge">GameDay TB</span>}
         {locked && !started && <span className="lock-badge">Locked</span>}

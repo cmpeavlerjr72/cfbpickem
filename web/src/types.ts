@@ -16,7 +16,14 @@ export interface Team {
 
 export interface Game {
   id: string;
+  /**
+   * Kickoff instant. When `timeTbd`, ESPN hasn't announced the time and this
+   * holds 12:00 PM ET of the game's day (ESPN's midnight-ET placeholder +
+   * 12h — data/normalize-game.mjs), so locks/day grouping stay sane.
+   */
   date: string;
+  /** Kickoff time not announced yet: show "TBD", keep the day. */
+  timeTbd?: boolean;
   week: number | null;
   seasonType: number;
   name: string;

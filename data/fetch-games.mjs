@@ -7,6 +7,7 @@ import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { splitWeekZero } from './split-week-zero.mjs';
+import { normalizeEvent } from './normalize-game.mjs'; // TBD kickoffs -> noon ET + timeTbd
 
 const YEAR = process.argv[2] ? Number(process.argv[2]) : 2026;
 const BASE = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard';
@@ -19,52 +20,6 @@ async function fetchWeek(seasonType, week) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   return res.json();
-}
-
-function normalizeTeam(competitor) {
-  const t = competitor.team ?? {};
-  const rank = competitor.curatedRank?.current;
-  return {
-    id: t.id ?? null,
-    school: t.location ?? t.name ?? 'TBD',
-    mascot: t.name ?? null,
-    abbrev: t.abbreviation ?? null,
-    displayName: t.displayName ?? null,
-    logo: t.logo ?? null,
-    color: t.color ? `#${t.color}` : null,
-    altColor: t.alternateColor ? `#${t.alternateColor}` : null,
-    conferenceId: t.conferenceId ?? null,
-    rank: rank && rank <= 25 ? rank : null,
-    homeAway: competitor.homeAway ?? null,
-  };
-}
-
-function normalizeEvent(event, seasonType) {
-  const comp = event.competitions?.[0] ?? {};
-  const competitors = comp.competitors ?? [];
-  const home = competitors.find((c) => c.homeAway === 'home') ?? competitors[0];
-  const away = competitors.find((c) => c.homeAway === 'away') ?? competitors[1];
-  const venue = comp.venue ?? {};
-  const broadcasts = (comp.broadcasts ?? []).flatMap((b) => b.names ?? []);
-  return {
-    id: event.id,
-    date: event.date,
-    week: event.week?.number ?? null,
-    seasonType,
-    name: event.name,
-    shortName: event.shortName,
-    neutralSite: comp.neutralSite ?? false,
-    conferenceGame: comp.conferenceCompetition ?? false,
-    venue: {
-      name: venue.fullName ?? null,
-      city: venue.address?.city ?? null,
-      state: venue.address?.state ?? null,
-    },
-    broadcast: broadcasts.length ? broadcasts.join(', ') : null,
-    status: comp.status?.type?.name ?? 'STATUS_SCHEDULED',
-    home: home ? normalizeTeam(home) : null,
-    away: away ? normalizeTeam(away) : null,
-  };
 }
 
 async function main() {
