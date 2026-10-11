@@ -1,7 +1,7 @@
 {
   "sport": "college-football",
   "season": 2026,
-  "fetchedAt": "2026-10-09T00:06:10.971Z",
+  "fetchedAt": "2026-10-11T17:51:26.938Z",
   "source": "ESPN site API (site.api.espn.com)",
   "totalGames": 949,
   "weeks": [
@@ -17215,182 +17215,6 @@
       "label": "Week 6",
       "games": [
         {
-          "id": "401870766",
-          "date": "2026-10-08T23:00Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "Sam Houston Bearkats at Liberty Flames",
-          "shortName": "SHSU @ LIB",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Williams Stadium (VA)",
-            "city": "Lynchburg",
-            "state": "VA"
-          },
-          "broadcast": "ESPNU",
-          "status": "STATUS_IN_PROGRESS",
-          "home": {
-            "id": "2335",
-            "school": "Liberty",
-            "mascot": "Flames",
-            "abbrev": "LIB",
-            "displayName": "Liberty Flames",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2335.png",
-            "color": "#0a254e",
-            "altColor": "#b72025",
-            "conferenceId": "12",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "2534",
-            "school": "Sam Houston",
-            "mascot": "Bearkats",
-            "abbrev": "SHSU",
-            "displayName": "Sam Houston Bearkats",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2534.png",
-            "color": "#f56423",
-            "altColor": "#ffffff",
-            "conferenceId": "12",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401871052",
-          "date": "2026-10-08T23:00Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "Missouri State Bears at Western Kentucky Hilltoppers",
-          "shortName": "MOST @ WKU",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Houchens Industries-L.T. Smith Stadium",
-            "city": "Bowling Green",
-            "state": "KY"
-          },
-          "broadcast": "CBSSN",
-          "status": "STATUS_IN_PROGRESS",
-          "home": {
-            "id": "98",
-            "school": "Western Kentucky",
-            "mascot": "Hilltoppers",
-            "abbrev": "WKU",
-            "displayName": "Western Kentucky Hilltoppers",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/98.png",
-            "color": "#e13a3e",
-            "altColor": "#ffffff",
-            "conferenceId": "12",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "2623",
-            "school": "Missouri State",
-            "mascot": "Bears",
-            "abbrev": "MOST",
-            "displayName": "Missouri State Bears",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2623.png",
-            "color": "#5e0009",
-            "altColor": "#ffffff",
-            "conferenceId": "12",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401862794",
-          "date": "2026-10-08T23:30Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "South Florida Bulls at UTSA Roadrunners",
-          "shortName": "USF @ UTSA",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Alamodome",
-            "city": "San Antonio",
-            "state": "TX"
-          },
-          "broadcast": "ESPN",
-          "status": "STATUS_IN_PROGRESS",
-          "home": {
-            "id": "2636",
-            "school": "UTSA",
-            "mascot": "Roadrunners",
-            "abbrev": "UTSA",
-            "displayName": "UTSA Roadrunners",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2636.png",
-            "color": "#0c2340",
-            "altColor": "#f15a22",
-            "conferenceId": "151",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "58",
-            "school": "South Florida",
-            "mascot": "Bulls",
-            "abbrev": "USF",
-            "displayName": "South Florida Bulls",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/58.png",
-            "color": "#006747",
-            "altColor": "#cfc493",
-            "conferenceId": "151",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401869933",
-          "date": "2026-10-08T23:30Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "South Alabama Jaguars at Arkansas State Red Wolves",
-          "shortName": "USA @ ARST",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Centennial Bank Stadium",
-            "city": "Jonesboro",
-            "state": "AR"
-          },
-          "broadcast": "ESPN2",
-          "status": "STATUS_IN_PROGRESS",
-          "home": {
-            "id": "2032",
-            "school": "Arkansas State",
-            "mascot": "Red Wolves",
-            "abbrev": "ARST",
-            "displayName": "Arkansas State Red Wolves",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2032.png",
-            "color": "#cc092f",
-            "altColor": "#000000",
-            "conferenceId": "37",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "6",
-            "school": "South Alabama",
-            "mascot": "Jaguars",
-            "abbrev": "USA",
-            "displayName": "South Alabama Jaguars",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/6.png",
-            "color": "#00205b",
-            "altColor": "#bf0d3e",
-            "conferenceId": "37",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
           "id": "401871090",
           "date": "2026-10-07T00:00Z",
           "timeTbd": false,
@@ -17523,45 +17347,221 @@
           }
         },
         {
-          "id": "401858254",
-          "date": "2026-10-09T23:00Z",
+          "id": "401870766",
+          "date": "2026-10-08T23:00Z",
           "timeTbd": false,
           "week": 6,
           "seasonType": 2,
-          "name": "Florida State Seminoles at Louisville Cardinals",
-          "shortName": "FSU @ LOU",
+          "name": "Sam Houston Bearkats at Liberty Flames",
+          "shortName": "SHSU @ LIB",
           "neutralSite": false,
           "conferenceGame": true,
           "venue": {
-            "name": "L&N Federal Credit Union Stadium",
-            "city": "Louisville",
-            "state": "KY"
+            "name": "Williams Stadium (VA)",
+            "city": "Lynchburg",
+            "state": "VA"
           },
-          "broadcast": "ESPN",
-          "status": "STATUS_SCHEDULED",
+          "broadcast": "ESPNU",
+          "status": "STATUS_FINAL",
           "home": {
-            "id": "97",
-            "school": "Louisville",
-            "mascot": "Cardinals",
-            "abbrev": "LOU",
-            "displayName": "Louisville Cardinals",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/97.png",
-            "color": "#c9001f",
-            "altColor": "#ffffff",
-            "conferenceId": "1",
+            "id": "2335",
+            "school": "Liberty",
+            "mascot": "Flames",
+            "abbrev": "LIB",
+            "displayName": "Liberty Flames",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2335.png",
+            "color": "#0a254e",
+            "altColor": "#b72025",
+            "conferenceId": "12",
             "rank": null,
             "homeAway": "home"
           },
           "away": {
-            "id": "52",
-            "school": "Florida State",
-            "mascot": "Seminoles",
-            "abbrev": "FSU",
-            "displayName": "Florida State Seminoles",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/52.png",
-            "color": "#782f40",
-            "altColor": "#ceb888",
-            "conferenceId": "1",
+            "id": "2534",
+            "school": "Sam Houston",
+            "mascot": "Bearkats",
+            "abbrev": "SHSU",
+            "displayName": "Sam Houston Bearkats",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2534.png",
+            "color": "#f56423",
+            "altColor": "#ffffff",
+            "conferenceId": "12",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401871052",
+          "date": "2026-10-08T23:00Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "Missouri State Bears at Western Kentucky Hilltoppers",
+          "shortName": "MOST @ WKU",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Houchens Industries-L.T. Smith Stadium",
+            "city": "Bowling Green",
+            "state": "KY"
+          },
+          "broadcast": "CBSSN",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "98",
+            "school": "Western Kentucky",
+            "mascot": "Hilltoppers",
+            "abbrev": "WKU",
+            "displayName": "Western Kentucky Hilltoppers",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/98.png",
+            "color": "#e13a3e",
+            "altColor": "#ffffff",
+            "conferenceId": "12",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "2623",
+            "school": "Missouri State",
+            "mascot": "Bears",
+            "abbrev": "MOST",
+            "displayName": "Missouri State Bears",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2623.png",
+            "color": "#5e0009",
+            "altColor": "#ffffff",
+            "conferenceId": "12",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401862794",
+          "date": "2026-10-08T23:30Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "South Florida Bulls at UTSA Roadrunners",
+          "shortName": "USF @ UTSA",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Alamodome",
+            "city": "San Antonio",
+            "state": "TX"
+          },
+          "broadcast": "ESPN",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "2636",
+            "school": "UTSA",
+            "mascot": "Roadrunners",
+            "abbrev": "UTSA",
+            "displayName": "UTSA Roadrunners",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2636.png",
+            "color": "#0c2340",
+            "altColor": "#f15a22",
+            "conferenceId": "151",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "58",
+            "school": "South Florida",
+            "mascot": "Bulls",
+            "abbrev": "USF",
+            "displayName": "South Florida Bulls",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/58.png",
+            "color": "#006747",
+            "altColor": "#cfc493",
+            "conferenceId": "151",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401869933",
+          "date": "2026-10-08T23:30Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "South Alabama Jaguars at Arkansas State Red Wolves",
+          "shortName": "USA @ ARST",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Centennial Bank Stadium",
+            "city": "Jonesboro",
+            "state": "AR"
+          },
+          "broadcast": "ESPN2",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "2032",
+            "school": "Arkansas State",
+            "mascot": "Red Wolves",
+            "abbrev": "ARST",
+            "displayName": "Arkansas State Red Wolves",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2032.png",
+            "color": "#cc092f",
+            "altColor": "#000000",
+            "conferenceId": "37",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "6",
+            "school": "South Alabama",
+            "mascot": "Jaguars",
+            "abbrev": "USA",
+            "displayName": "South Alabama Jaguars",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/6.png",
+            "color": "#00205b",
+            "altColor": "#bf0d3e",
+            "conferenceId": "37",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401856826",
+          "date": "2026-10-10T02:30Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "Iowa State Cyclones at BYU Cougars",
+          "shortName": "ISU @ BYU",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "LaVell Edwards Stadium",
+            "city": "Provo",
+            "state": "UT"
+          },
+          "broadcast": "ESPN",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "252",
+            "school": "BYU",
+            "mascot": "Cougars",
+            "abbrev": "BYU",
+            "displayName": "BYU Cougars",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/252.png",
+            "color": "#0047ba",
+            "altColor": "#002e5d",
+            "conferenceId": "4",
+            "rank": 8,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "66",
+            "school": "Iowa State",
+            "mascot": "Cyclones",
+            "abbrev": "ISU",
+            "displayName": "Iowa State Cyclones",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png",
+            "color": "#ae192d",
+            "altColor": "#ffc72a",
+            "conferenceId": "4",
             "rank": null,
             "homeAway": "away"
           }
@@ -17581,8 +17581,8 @@
             "city": "Seattle",
             "state": "WA"
           },
-          "broadcast": null,
-          "status": "STATUS_SCHEDULED",
+          "broadcast": "Fox",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "264",
             "school": "Washington",
@@ -17611,6 +17611,50 @@
           }
         },
         {
+          "id": "401858254",
+          "date": "2026-10-09T23:00Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "Florida State Seminoles at Louisville Cardinals",
+          "shortName": "FSU @ LOU",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "L&N Federal Credit Union Stadium",
+            "city": "Louisville",
+            "state": "KY"
+          },
+          "broadcast": "ESPN",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "97",
+            "school": "Louisville",
+            "mascot": "Cardinals",
+            "abbrev": "LOU",
+            "displayName": "Louisville Cardinals",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/97.png",
+            "color": "#c9001f",
+            "altColor": "#ffffff",
+            "conferenceId": "1",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "52",
+            "school": "Florida State",
+            "mascot": "Seminoles",
+            "abbrev": "FSU",
+            "displayName": "Florida State Seminoles",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/52.png",
+            "color": "#782f40",
+            "altColor": "#ceb888",
+            "conferenceId": "1",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
           "id": "401860922",
           "date": "2026-10-10T01:00Z",
           "timeTbd": false,
@@ -17626,7 +17670,7 @@
             "state": "UT"
           },
           "broadcast": "CW",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "328",
             "school": "Utah State",
@@ -17670,7 +17714,7 @@
             "state": "CA"
           },
           "broadcast": "CBSSN",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "23",
             "school": "San José State",
@@ -17699,45 +17743,177 @@
           }
         },
         {
-          "id": "401856826",
-          "date": "2026-10-10T02:15Z",
+          "id": "401856717",
+          "date": "2026-10-10T19:30Z",
           "timeTbd": false,
           "week": 6,
           "seasonType": 2,
-          "name": "Iowa State Cyclones at BYU Cougars",
-          "shortName": "ISU @ BYU",
-          "neutralSite": false,
+          "name": "Texas Longhorns at Oklahoma Sooners",
+          "shortName": "TEX VS OU",
+          "neutralSite": true,
           "conferenceGame": true,
           "venue": {
-            "name": "LaVell Edwards Stadium",
-            "city": "Provo",
-            "state": "UT"
+            "name": "Cotton Bowl",
+            "city": "Dallas",
+            "state": "TX"
           },
-          "broadcast": "ESPN",
-          "status": "STATUS_SCHEDULED",
+          "broadcast": "ABC",
+          "status": "STATUS_FINAL",
           "home": {
-            "id": "252",
-            "school": "BYU",
-            "mascot": "Cougars",
-            "abbrev": "BYU",
-            "displayName": "BYU Cougars",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/252.png",
-            "color": "#0047ba",
-            "altColor": "#002e5d",
-            "conferenceId": "4",
-            "rank": 8,
+            "id": "201",
+            "school": "Oklahoma",
+            "mascot": "Sooners",
+            "abbrev": "OU",
+            "displayName": "Oklahoma Sooners",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/201.png",
+            "color": "#990000",
+            "altColor": "#ffffff",
+            "conferenceId": "8",
+            "rank": null,
             "homeAway": "home"
           },
           "away": {
-            "id": "66",
-            "school": "Iowa State",
-            "mascot": "Cyclones",
-            "abbrev": "ISU",
-            "displayName": "Iowa State Cyclones",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png",
-            "color": "#ae192d",
-            "altColor": "#ffc72a",
-            "conferenceId": "4",
+            "id": "251",
+            "school": "Texas",
+            "mascot": "Longhorns",
+            "abbrev": "TEX",
+            "displayName": "Texas Longhorns",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png",
+            "color": "#af5c37",
+            "altColor": "#ffffff",
+            "conferenceId": "8",
+            "rank": 1,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401856712",
+          "date": "2026-10-10T23:30Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "Georgia Bulldogs at Alabama Crimson Tide",
+          "shortName": "UGA @ ALA",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Bryant-Denny Stadium",
+            "city": "Tuscaloosa",
+            "state": "AL"
+          },
+          "broadcast": "ABC",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "333",
+            "school": "Alabama",
+            "mascot": "Crimson Tide",
+            "abbrev": "ALA",
+            "displayName": "Alabama Crimson Tide",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png",
+            "color": "#9e1b32",
+            "altColor": "#ffffff",
+            "conferenceId": "8",
+            "rank": 6,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "61",
+            "school": "Georgia",
+            "mascot": "Bulldogs",
+            "abbrev": "UGA",
+            "displayName": "Georgia Bulldogs",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png",
+            "color": "#ba0c2f",
+            "altColor": "#2c2a29",
+            "conferenceId": "8",
+            "rank": 2,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401858257",
+          "date": "2026-10-10T19:30Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "Stanford Cardinal at Notre Dame Fighting Irish",
+          "shortName": "STAN @ ND",
+          "neutralSite": false,
+          "conferenceGame": false,
+          "venue": {
+            "name": "Notre Dame Stadium",
+            "city": "Notre Dame",
+            "state": "IN"
+          },
+          "broadcast": "NBC",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "87",
+            "school": "Notre Dame",
+            "mascot": "Fighting Irish",
+            "abbrev": "ND",
+            "displayName": "Notre Dame Fighting Irish",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/87.png",
+            "color": "#062340",
+            "altColor": "#c99700",
+            "conferenceId": "18",
+            "rank": 3,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "24",
+            "school": "Stanford",
+            "mascot": "Cardinal",
+            "abbrev": "STAN",
+            "displayName": "Stanford Cardinal",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/24.png",
+            "color": "#8c1515",
+            "altColor": "#ffffff",
+            "conferenceId": "1",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401858483",
+          "date": "2026-10-10T20:15Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "Maryland Terrapins at Ohio State Buckeyes",
+          "shortName": "MD @ OSU",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Ohio Stadium",
+            "city": "Columbus",
+            "state": "OH"
+          },
+          "broadcast": "BTN",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "194",
+            "school": "Ohio State",
+            "mascot": "Buckeyes",
+            "abbrev": "OSU",
+            "displayName": "Ohio State Buckeyes",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png",
+            "color": "#ba0c2f",
+            "altColor": "#a8adb4",
+            "conferenceId": "5",
+            "rank": 5,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "120",
+            "school": "Maryland",
+            "mascot": "Terrapins",
+            "abbrev": "MD",
+            "displayName": "Maryland Terrapins",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/120.png",
+            "color": "#ce1126",
+            "altColor": "#ffffff",
+            "conferenceId": "5",
             "rank": null,
             "homeAway": "away"
           }
@@ -17758,7 +17934,7 @@
             "state": "NE"
           },
           "broadcast": "Fox",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "158",
             "school": "Nebraska",
@@ -17787,6 +17963,182 @@
           }
         },
         {
+          "id": "401856718",
+          "date": "2026-10-10T19:30Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "Ole Miss Rebels at Vanderbilt Commodores",
+          "shortName": "MISS @ VAN",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "FirstBank Stadium",
+            "city": "Nashville",
+            "state": "TN"
+          },
+          "broadcast": "ESPN, Disney+",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "238",
+            "school": "Vanderbilt",
+            "mascot": "Commodores",
+            "abbrev": "VAN",
+            "displayName": "Vanderbilt Commodores",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/238.png",
+            "color": "#000000",
+            "altColor": "#cfae70",
+            "conferenceId": "8",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "145",
+            "school": "Ole Miss",
+            "mascot": "Rebels",
+            "abbrev": "MISS",
+            "displayName": "Ole Miss Rebels",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png",
+            "color": "#13294b",
+            "altColor": "#cf142b",
+            "conferenceId": "8",
+            "rank": 9,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401856715",
+          "date": "2026-10-10T23:00Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "LSU Tigers at Kentucky Wildcats",
+          "shortName": "LSU @ UK",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Kroger Field",
+            "city": "Lexington",
+            "state": "KY"
+          },
+          "broadcast": "ESPN",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "96",
+            "school": "Kentucky",
+            "mascot": "Wildcats",
+            "abbrev": "UK",
+            "displayName": "Kentucky Wildcats",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/96.png",
+            "color": "#0033a0",
+            "altColor": "#ffffff",
+            "conferenceId": "8",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "99",
+            "school": "LSU",
+            "mascot": "Tigers",
+            "abbrev": "LSU",
+            "displayName": "LSU Tigers",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png",
+            "color": "#461d76",
+            "altColor": "#fdd023",
+            "conferenceId": "8",
+            "rank": 10,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401856827",
+          "date": "2026-10-11T00:00Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "Kansas Jayhawks at Utah Utes",
+          "shortName": "KU @ UTAH",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Rice-Eccles Stadium",
+            "city": "Salt Lake City",
+            "state": "UT"
+          },
+          "broadcast": "ESPN",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "254",
+            "school": "Utah",
+            "mascot": "Utes",
+            "abbrev": "UTAH",
+            "displayName": "Utah Utes",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/254.png",
+            "color": "#be0000",
+            "altColor": "#ffffff",
+            "conferenceId": "4",
+            "rank": 12,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "2305",
+            "school": "Kansas",
+            "mascot": "Jayhawks",
+            "abbrev": "KU",
+            "displayName": "Kansas Jayhawks",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png",
+            "color": "#0051ba",
+            "altColor": "#e8000d",
+            "conferenceId": "4",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401858484",
+          "date": "2026-10-10T19:30Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "UCLA Bruins at Oregon Ducks",
+          "shortName": "UCLA @ ORE",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Autzen Stadium",
+            "city": "Eugene",
+            "state": "OR"
+          },
+          "broadcast": "CBS",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "2483",
+            "school": "Oregon",
+            "mascot": "Ducks",
+            "abbrev": "ORE",
+            "displayName": "Oregon Ducks",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png",
+            "color": "#00934b",
+            "altColor": "#fff41b",
+            "conferenceId": "5",
+            "rank": 13,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "26",
+            "school": "UCLA",
+            "mascot": "Bruins",
+            "abbrev": "UCLA",
+            "displayName": "UCLA Bruins",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/26.png",
+            "color": "#2774ae",
+            "altColor": "#f2a900",
+            "conferenceId": "5",
+            "rank": 21,
+            "homeAway": "away"
+          }
+        },
+        {
           "id": "401856716",
           "date": "2026-10-10T16:00Z",
           "timeTbd": false,
@@ -17801,8 +18153,8 @@
             "city": "Columbia",
             "state": "MO"
           },
-          "broadcast": "ABC",
-          "status": "STATUS_SCHEDULED",
+          "broadcast": "ABC, Disney+",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "142",
             "school": "Missouri",
@@ -17831,6 +18183,94 @@
           }
         },
         {
+          "id": "401856713",
+          "date": "2026-10-10T20:15Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "Tennessee Volunteers at Arkansas Razorbacks",
+          "shortName": "TENN @ ARK",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Donald W. Reynolds Razorback Stadium",
+            "city": "Fayetteville",
+            "state": "AR"
+          },
+          "broadcast": "SEC Network",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "8",
+            "school": "Arkansas",
+            "mascot": "Razorbacks",
+            "abbrev": "ARK",
+            "displayName": "Arkansas Razorbacks",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/8.png",
+            "color": "#a32136",
+            "altColor": "#ffffff",
+            "conferenceId": "8",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "2633",
+            "school": "Tennessee",
+            "mascot": "Volunteers",
+            "abbrev": "TENN",
+            "displayName": "Tennessee Volunteers",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png",
+            "color": "#ff8200",
+            "altColor": "#ffffff",
+            "conferenceId": "8",
+            "rank": 15,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401856714",
+          "date": "2026-10-10T16:45Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "South Carolina Gamecocks at Florida Gators",
+          "shortName": "SC @ FLA",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Ben Hill Griffin Stadium",
+            "city": "Gainesville",
+            "state": "FL"
+          },
+          "broadcast": "SEC Network",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "57",
+            "school": "Florida",
+            "mascot": "Gators",
+            "abbrev": "FLA",
+            "displayName": "Florida Gators",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png",
+            "color": "#0021a5",
+            "altColor": "#fa4616",
+            "conferenceId": "8",
+            "rank": 16,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "2579",
+            "school": "South Carolina",
+            "mascot": "Gamecocks",
+            "abbrev": "SC",
+            "displayName": "South Carolina Gamecocks",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2579.png",
+            "color": "#73000a",
+            "altColor": "#000000",
+            "conferenceId": "8",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
           "id": "401856824",
           "date": "2026-10-10T16:00Z",
           "timeTbd": false,
@@ -17846,7 +18286,7 @@
             "state": "OK"
           },
           "broadcast": "ESPN2",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "197",
             "school": "Oklahoma State",
@@ -17875,6 +18315,138 @@
           }
         },
         {
+          "id": "401858485",
+          "date": "2026-10-10T23:30Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "USC Trojans at Penn State Nittany Lions",
+          "shortName": "USC @ PSU",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Beaver Stadium",
+            "city": "University Park",
+            "state": "PA"
+          },
+          "broadcast": "NBC",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "213",
+            "school": "Penn State",
+            "mascot": "Nittany Lions",
+            "abbrev": "PSU",
+            "displayName": "Penn State Nittany Lions",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png",
+            "color": "#061440",
+            "altColor": "#ffffff",
+            "conferenceId": "5",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "30",
+            "school": "USC",
+            "mascot": "Trojans",
+            "abbrev": "USC",
+            "displayName": "USC Trojans",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/30.png",
+            "color": "#9d2235",
+            "altColor": "#ffc72c",
+            "conferenceId": "5",
+            "rank": 19,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401856825",
+          "date": "2026-10-10T19:30Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "Houston Cougars at Kansas State Wildcats",
+          "shortName": "HOU @ KSU",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Bill Snyder Family Stadium",
+            "city": "Manhattan",
+            "state": "KS"
+          },
+          "broadcast": "Fox",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "2306",
+            "school": "Kansas State",
+            "mascot": "Wildcats",
+            "abbrev": "KSU",
+            "displayName": "Kansas State Wildcats",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2306.png",
+            "color": "#330a57",
+            "altColor": "#e2e3e4",
+            "conferenceId": "4",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "248",
+            "school": "Houston",
+            "mascot": "Cougars",
+            "abbrev": "HOU",
+            "displayName": "Houston Cougars",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/248.png",
+            "color": "#c8102e",
+            "altColor": "#ffffff",
+            "conferenceId": "4",
+            "rank": 22,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401860901",
+          "date": "2026-10-11T02:30Z",
+          "timeTbd": false,
+          "week": 6,
+          "seasonType": 2,
+          "name": "Boise State Broncos at Fresno State Bulldogs",
+          "shortName": "BOIS @ FRES",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Valley Children's Stadium",
+            "city": "Fresno",
+            "state": "CA"
+          },
+          "broadcast": "CW",
+          "status": "STATUS_FINAL",
+          "home": {
+            "id": "278",
+            "school": "Fresno State",
+            "mascot": "Bulldogs",
+            "abbrev": "FRES",
+            "displayName": "Fresno State Bulldogs",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/278.png",
+            "color": "#b1102b",
+            "altColor": "#13284c",
+            "conferenceId": "9",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "68",
+            "school": "Boise State",
+            "mascot": "Broncos",
+            "abbrev": "BOIS",
+            "displayName": "Boise State Broncos",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/68.png",
+            "color": "#0033a0",
+            "altColor": "#d64309",
+            "conferenceId": "9",
+            "rank": 23,
+            "homeAway": "away"
+          }
+        },
+        {
           "id": "401858256",
           "date": "2026-10-10T16:00Z",
           "timeTbd": false,
@@ -17890,7 +18462,7 @@
             "state": "PA"
           },
           "broadcast": "ESPN",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "221",
             "school": "Pittsburgh",
@@ -17934,7 +18506,7 @@
             "state": "WV"
           },
           "broadcast": "TNT",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "277",
             "school": "West Virginia",
@@ -17978,7 +18550,7 @@
             "state": "NC"
           },
           "broadcast": "CW",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "152",
             "school": "NC State",
@@ -18022,7 +18594,7 @@
             "state": "NY"
           },
           "broadcast": "CBSSN",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "349",
             "school": "Army",
@@ -18066,7 +18638,7 @@
             "state": "OH"
           },
           "broadcast": "ESPN+",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "189",
             "school": "Bowling Green",
@@ -18110,7 +18682,7 @@
             "state": "IL"
           },
           "broadcast": "BTN",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "77",
             "school": "Northwestern",
@@ -18139,45 +18711,45 @@
           }
         },
         {
-          "id": "401856714",
-          "date": "2026-10-10T16:45Z",
+          "id": "401862797",
+          "date": "2026-10-10T17:00Z",
           "timeTbd": false,
           "week": 6,
           "seasonType": 2,
-          "name": "South Carolina Gamecocks at Florida Gators",
-          "shortName": "SC @ FLA",
+          "name": "Rice Owls at East Carolina Pirates",
+          "shortName": "RICE @ ECU",
           "neutralSite": false,
           "conferenceGame": true,
           "venue": {
-            "name": "Ben Hill Griffin Stadium",
-            "city": "Gainesville",
-            "state": "FL"
+            "name": "Dowdy-Ficklen Stadium",
+            "city": "Greenville",
+            "state": "NC"
           },
-          "broadcast": "SEC Network",
-          "status": "STATUS_SCHEDULED",
+          "broadcast": "ESPN+",
+          "status": "STATUS_FINAL",
           "home": {
-            "id": "57",
-            "school": "Florida",
-            "mascot": "Gators",
-            "abbrev": "FLA",
-            "displayName": "Florida Gators",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png",
-            "color": "#0021a5",
-            "altColor": "#fa4616",
-            "conferenceId": "8",
-            "rank": 16,
+            "id": "151",
+            "school": "East Carolina",
+            "mascot": "Pirates",
+            "abbrev": "ECU",
+            "displayName": "East Carolina Pirates",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/151.png",
+            "color": "#582c83",
+            "altColor": "#ffc72c",
+            "conferenceId": "151",
+            "rank": null,
             "homeAway": "home"
           },
           "away": {
-            "id": "2579",
-            "school": "South Carolina",
-            "mascot": "Gamecocks",
-            "abbrev": "SC",
-            "displayName": "South Carolina Gamecocks",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2579.png",
-            "color": "#73000a",
-            "altColor": "#000000",
-            "conferenceId": "8",
+            "id": "242",
+            "school": "Rice",
+            "mascot": "Owls",
+            "abbrev": "RICE",
+            "displayName": "Rice Owls",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/242.png",
+            "color": "#00205b",
+            "altColor": "#c1c6c8",
+            "conferenceId": "151",
             "rank": null,
             "homeAway": "away"
           }
@@ -18198,7 +18770,7 @@
             "state": "NC"
           },
           "broadcast": "ESPN+",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "2026",
             "school": "App State",
@@ -18242,7 +18814,7 @@
             "state": "MA"
           },
           "broadcast": "ESPN+",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "113",
             "school": "Massachusetts",
@@ -18271,226 +18843,6 @@
           }
         },
         {
-          "id": "401856717",
-          "date": "2026-10-10T19:30Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "Texas Longhorns at Oklahoma Sooners",
-          "shortName": "TEX VS OU",
-          "neutralSite": true,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Cotton Bowl",
-            "city": "Dallas",
-            "state": "TX"
-          },
-          "broadcast": "ABC",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "201",
-            "school": "Oklahoma",
-            "mascot": "Sooners",
-            "abbrev": "OU",
-            "displayName": "Oklahoma Sooners",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/201.png",
-            "color": "#990000",
-            "altColor": "#ffffff",
-            "conferenceId": "8",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "251",
-            "school": "Texas",
-            "mascot": "Longhorns",
-            "abbrev": "TEX",
-            "displayName": "Texas Longhorns",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png",
-            "color": "#af5c37",
-            "altColor": "#ffffff",
-            "conferenceId": "8",
-            "rank": 1,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401858257",
-          "date": "2026-10-10T19:30Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "Stanford Cardinal at Notre Dame Fighting Irish",
-          "shortName": "STAN @ ND",
-          "neutralSite": false,
-          "conferenceGame": false,
-          "venue": {
-            "name": "Notre Dame Stadium",
-            "city": "Notre Dame",
-            "state": "IN"
-          },
-          "broadcast": "NBC",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "87",
-            "school": "Notre Dame",
-            "mascot": "Fighting Irish",
-            "abbrev": "ND",
-            "displayName": "Notre Dame Fighting Irish",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/87.png",
-            "color": "#062340",
-            "altColor": "#c99700",
-            "conferenceId": "18",
-            "rank": 3,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "24",
-            "school": "Stanford",
-            "mascot": "Cardinal",
-            "abbrev": "STAN",
-            "displayName": "Stanford Cardinal",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/24.png",
-            "color": "#8c1515",
-            "altColor": "#ffffff",
-            "conferenceId": "1",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401856718",
-          "date": "2026-10-10T19:30Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "Ole Miss Rebels at Vanderbilt Commodores",
-          "shortName": "MISS @ VAN",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "FirstBank Stadium",
-            "city": "Nashville",
-            "state": "TN"
-          },
-          "broadcast": "ESPN",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "238",
-            "school": "Vanderbilt",
-            "mascot": "Commodores",
-            "abbrev": "VAN",
-            "displayName": "Vanderbilt Commodores",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/238.png",
-            "color": "#000000",
-            "altColor": "#cfae70",
-            "conferenceId": "8",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "145",
-            "school": "Ole Miss",
-            "mascot": "Rebels",
-            "abbrev": "MISS",
-            "displayName": "Ole Miss Rebels",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png",
-            "color": "#13294b",
-            "altColor": "#cf142b",
-            "conferenceId": "8",
-            "rank": 9,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401858484",
-          "date": "2026-10-10T19:30Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "UCLA Bruins at Oregon Ducks",
-          "shortName": "UCLA @ ORE",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Autzen Stadium",
-            "city": "Eugene",
-            "state": "OR"
-          },
-          "broadcast": "CBS",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "2483",
-            "school": "Oregon",
-            "mascot": "Ducks",
-            "abbrev": "ORE",
-            "displayName": "Oregon Ducks",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png",
-            "color": "#00934b",
-            "altColor": "#fff41b",
-            "conferenceId": "5",
-            "rank": 13,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "26",
-            "school": "UCLA",
-            "mascot": "Bruins",
-            "abbrev": "UCLA",
-            "displayName": "UCLA Bruins",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/26.png",
-            "color": "#2774ae",
-            "altColor": "#f2a900",
-            "conferenceId": "5",
-            "rank": 21,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401856825",
-          "date": "2026-10-10T19:30Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "Houston Cougars at Kansas State Wildcats",
-          "shortName": "HOU @ KSU",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Bill Snyder Family Stadium",
-            "city": "Manhattan",
-            "state": "KS"
-          },
-          "broadcast": "Fox",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "2306",
-            "school": "Kansas State",
-            "mascot": "Wildcats",
-            "abbrev": "KSU",
-            "displayName": "Kansas State Wildcats",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2306.png",
-            "color": "#330a57",
-            "altColor": "#e2e3e4",
-            "conferenceId": "4",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "248",
-            "school": "Houston",
-            "mascot": "Cougars",
-            "abbrev": "HOU",
-            "displayName": "Houston Cougars",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/248.png",
-            "color": "#c8102e",
-            "altColor": "#ffffff",
-            "conferenceId": "4",
-            "rank": 22,
-            "homeAway": "away"
-          }
-        },
-        {
           "id": "401858255",
           "date": "2026-10-10T19:30Z",
           "timeTbd": false,
@@ -18506,7 +18858,7 @@
             "state": "GA"
           },
           "broadcast": "ESPN2",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "59",
             "school": "Georgia Tech",
@@ -18550,7 +18902,7 @@
             "state": "CA"
           },
           "broadcast": "ACC Network",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "25",
             "school": "California",
@@ -18594,7 +18946,7 @@
             "state": "MI"
           },
           "broadcast": "FS1",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "127",
             "school": "Michigan State",
@@ -18638,7 +18990,7 @@
             "state": "TX"
           },
           "broadcast": "ESPN+",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "249",
             "school": "North Texas",
@@ -18682,7 +19034,7 @@
             "state": "MD"
           },
           "broadcast": "CBSSN",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "2426",
             "school": "Navy",
@@ -18726,7 +19078,7 @@
             "state": "OH"
           },
           "broadcast": "ESPN+",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "2006",
             "school": "Akron",
@@ -18770,7 +19122,7 @@
             "state": "OH"
           },
           "broadcast": "ESPN+",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "2649",
             "school": "Toledo",
@@ -18814,7 +19166,7 @@
             "state": "OH"
           },
           "broadcast": "ESPN+",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "195",
             "school": "Ohio",
@@ -18858,7 +19210,7 @@
             "state": "MI"
           },
           "broadcast": "ESPN+",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "2711",
             "school": "Western Michigan",
@@ -18902,7 +19254,7 @@
             "state": "PA"
           },
           "broadcast": "ESPNU",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "218",
             "school": "Temple",
@@ -18931,138 +19283,6 @@
           }
         },
         {
-          "id": "401862797",
-          "date": "2026-10-10T20:00Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "Rice Owls at East Carolina Pirates",
-          "shortName": "RICE @ ECU",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Dowdy-Ficklen Stadium",
-            "city": "Greenville",
-            "state": "NC"
-          },
-          "broadcast": "ESPN+",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "151",
-            "school": "East Carolina",
-            "mascot": "Pirates",
-            "abbrev": "ECU",
-            "displayName": "East Carolina Pirates",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/151.png",
-            "color": "#582c83",
-            "altColor": "#ffc72c",
-            "conferenceId": "151",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "242",
-            "school": "Rice",
-            "mascot": "Owls",
-            "abbrev": "RICE",
-            "displayName": "Rice Owls",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/242.png",
-            "color": "#00205b",
-            "altColor": "#c1c6c8",
-            "conferenceId": "151",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401858483",
-          "date": "2026-10-10T20:15Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "Maryland Terrapins at Ohio State Buckeyes",
-          "shortName": "MD @ OSU",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Ohio Stadium",
-            "city": "Columbus",
-            "state": "OH"
-          },
-          "broadcast": "BTN",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "194",
-            "school": "Ohio State",
-            "mascot": "Buckeyes",
-            "abbrev": "OSU",
-            "displayName": "Ohio State Buckeyes",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png",
-            "color": "#ba0c2f",
-            "altColor": "#a8adb4",
-            "conferenceId": "5",
-            "rank": 5,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "120",
-            "school": "Maryland",
-            "mascot": "Terrapins",
-            "abbrev": "MD",
-            "displayName": "Maryland Terrapins",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/120.png",
-            "color": "#ce1126",
-            "altColor": "#ffffff",
-            "conferenceId": "5",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401856713",
-          "date": "2026-10-10T20:15Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "Tennessee Volunteers at Arkansas Razorbacks",
-          "shortName": "TENN @ ARK",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Donald W. Reynolds Razorback Stadium",
-            "city": "Fayetteville",
-            "state": "AR"
-          },
-          "broadcast": "SEC Network",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "8",
-            "school": "Arkansas",
-            "mascot": "Razorbacks",
-            "abbrev": "ARK",
-            "displayName": "Arkansas Razorbacks",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/8.png",
-            "color": "#a32136",
-            "altColor": "#ffffff",
-            "conferenceId": "8",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "2633",
-            "school": "Tennessee",
-            "mascot": "Volunteers",
-            "abbrev": "TENN",
-            "displayName": "Tennessee Volunteers",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png",
-            "color": "#ff8200",
-            "altColor": "#ffffff",
-            "conferenceId": "8",
-            "rank": 15,
-            "homeAway": "away"
-          }
-        },
-        {
           "id": "401860902",
           "date": "2026-10-10T22:00Z",
           "timeTbd": false,
@@ -19078,7 +19298,7 @@
             "state": "OR"
           },
           "broadcast": "USA Net",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "204",
             "school": "Oregon State",
@@ -19107,50 +19327,6 @@
           }
         },
         {
-          "id": "401856715",
-          "date": "2026-10-10T23:00Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "LSU Tigers at Kentucky Wildcats",
-          "shortName": "LSU @ UK",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Kroger Field",
-            "city": "Lexington",
-            "state": "KY"
-          },
-          "broadcast": "ESPN",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "96",
-            "school": "Kentucky",
-            "mascot": "Wildcats",
-            "abbrev": "UK",
-            "displayName": "Kentucky Wildcats",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/96.png",
-            "color": "#0033a0",
-            "altColor": "#ffffff",
-            "conferenceId": "8",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "99",
-            "school": "LSU",
-            "mascot": "Tigers",
-            "abbrev": "LSU",
-            "displayName": "LSU Tigers",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png",
-            "color": "#461d76",
-            "altColor": "#fdd023",
-            "conferenceId": "8",
-            "rank": 10,
-            "homeAway": "away"
-          }
-        },
-        {
           "id": "401862798",
           "date": "2026-10-10T23:00Z",
           "timeTbd": false,
@@ -19166,7 +19342,7 @@
             "state": "TN"
           },
           "broadcast": "ESPN2",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "235",
             "school": "Memphis",
@@ -19210,7 +19386,7 @@
             "state": "TX"
           },
           "broadcast": "FS1",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "2638",
             "school": "UTEP",
@@ -19254,7 +19430,7 @@
             "state": "NV"
           },
           "broadcast": "CW",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "2439",
             "school": "UNLV",
@@ -19298,7 +19474,7 @@
             "state": "WV"
           },
           "broadcast": "ESPN+",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "276",
             "school": "Marshall",
@@ -19327,94 +19503,6 @@
           }
         },
         {
-          "id": "401856712",
-          "date": "2026-10-10T23:30Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "Georgia Bulldogs at Alabama Crimson Tide",
-          "shortName": "UGA @ ALA",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Bryant-Denny Stadium",
-            "city": "Tuscaloosa",
-            "state": "AL"
-          },
-          "broadcast": "ABC",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "333",
-            "school": "Alabama",
-            "mascot": "Crimson Tide",
-            "abbrev": "ALA",
-            "displayName": "Alabama Crimson Tide",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png",
-            "color": "#9e1b32",
-            "altColor": "#ffffff",
-            "conferenceId": "8",
-            "rank": 6,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "61",
-            "school": "Georgia",
-            "mascot": "Bulldogs",
-            "abbrev": "UGA",
-            "displayName": "Georgia Bulldogs",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png",
-            "color": "#ba0c2f",
-            "altColor": "#2c2a29",
-            "conferenceId": "8",
-            "rank": 2,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401858485",
-          "date": "2026-10-10T23:30Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "USC Trojans at Penn State Nittany Lions",
-          "shortName": "USC @ PSU",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Beaver Stadium",
-            "city": "University Park",
-            "state": "PA"
-          },
-          "broadcast": "NBC",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "213",
-            "school": "Penn State",
-            "mascot": "Nittany Lions",
-            "abbrev": "PSU",
-            "displayName": "Penn State Nittany Lions",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png",
-            "color": "#061440",
-            "altColor": "#ffffff",
-            "conferenceId": "5",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "30",
-            "school": "USC",
-            "mascot": "Trojans",
-            "abbrev": "USC",
-            "displayName": "USC Trojans",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/30.png",
-            "color": "#9d2235",
-            "altColor": "#ffc72c",
-            "conferenceId": "5",
-            "rank": 19,
-            "homeAway": "away"
-          }
-        },
-        {
           "id": "401858258",
           "date": "2026-10-10T23:30Z",
           "timeTbd": false,
@@ -19430,7 +19518,7 @@
             "state": "VA"
           },
           "broadcast": "ACC Network",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "258",
             "school": "Virginia",
@@ -19474,7 +19562,7 @@
             "state": "IL"
           },
           "broadcast": "CBSSN",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "2459",
             "school": "Northern Illinois",
@@ -19503,50 +19591,6 @@
           }
         },
         {
-          "id": "401869949",
-          "date": "2026-10-10T23:30Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "James Madison Dukes at Georgia Southern Eagles",
-          "shortName": "JMU @ GASO",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Allen E. Paulson Stadium",
-            "city": "Statesboro",
-            "state": "GA"
-          },
-          "broadcast": "ESPNU",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "290",
-            "school": "Georgia Southern",
-            "mascot": "Eagles",
-            "abbrev": "GASO",
-            "displayName": "Georgia Southern Eagles",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/290.png",
-            "color": "#041e42",
-            "altColor": "#a3aaae",
-            "conferenceId": "37",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "256",
-            "school": "James Madison",
-            "mascot": "Dukes",
-            "abbrev": "JMU",
-            "displayName": "James Madison Dukes",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/256.png",
-            "color": "#450084",
-            "altColor": "#cbb677",
-            "conferenceId": "37",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
           "id": "401869965",
           "date": "2026-10-10T23:30Z",
           "timeTbd": false,
@@ -19562,7 +19606,7 @@
             "state": "LA"
           },
           "broadcast": "ESPN+",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "2348",
             "school": "Louisiana Tech",
@@ -19606,7 +19650,7 @@
             "state": "IN"
           },
           "broadcast": "BTN",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "2509",
             "school": "Purdue",
@@ -19635,90 +19679,46 @@
           }
         },
         {
-          "id": "401856827",
-          "date": "2026-10-11T02:15Z",
+          "id": "401869949",
+          "date": "2026-10-11T00:10Z",
           "timeTbd": false,
           "week": 6,
           "seasonType": 2,
-          "name": "Kansas Jayhawks at Utah Utes",
-          "shortName": "KU @ UTAH",
+          "name": "James Madison Dukes at Georgia Southern Eagles",
+          "shortName": "JMU @ GASO",
           "neutralSite": false,
           "conferenceGame": true,
           "venue": {
-            "name": "Rice-Eccles Stadium",
-            "city": "Salt Lake City",
-            "state": "UT"
+            "name": "Allen E. Paulson Stadium",
+            "city": "Statesboro",
+            "state": "GA"
           },
-          "broadcast": "ESPN",
-          "status": "STATUS_SCHEDULED",
+          "broadcast": "ESPNU",
+          "status": "STATUS_FINAL",
           "home": {
-            "id": "254",
-            "school": "Utah",
-            "mascot": "Utes",
-            "abbrev": "UTAH",
-            "displayName": "Utah Utes",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/254.png",
-            "color": "#be0000",
-            "altColor": "#ffffff",
-            "conferenceId": "4",
-            "rank": 12,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "2305",
-            "school": "Kansas",
-            "mascot": "Jayhawks",
-            "abbrev": "KU",
-            "displayName": "Kansas Jayhawks",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png",
-            "color": "#0051ba",
-            "altColor": "#e8000d",
-            "conferenceId": "4",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401860901",
-          "date": "2026-10-11T02:30Z",
-          "timeTbd": false,
-          "week": 6,
-          "seasonType": 2,
-          "name": "Boise State Broncos at Fresno State Bulldogs",
-          "shortName": "BOIS @ FRES",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Valley Children's Stadium",
-            "city": "Fresno",
-            "state": "CA"
-          },
-          "broadcast": "CW",
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "278",
-            "school": "Fresno State",
-            "mascot": "Bulldogs",
-            "abbrev": "FRES",
-            "displayName": "Fresno State Bulldogs",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/278.png",
-            "color": "#b1102b",
-            "altColor": "#13284c",
-            "conferenceId": "9",
+            "id": "290",
+            "school": "Georgia Southern",
+            "mascot": "Eagles",
+            "abbrev": "GASO",
+            "displayName": "Georgia Southern Eagles",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/290.png",
+            "color": "#041e42",
+            "altColor": "#a3aaae",
+            "conferenceId": "37",
             "rank": null,
             "homeAway": "home"
           },
           "away": {
-            "id": "68",
-            "school": "Boise State",
-            "mascot": "Broncos",
-            "abbrev": "BOIS",
-            "displayName": "Boise State Broncos",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/68.png",
-            "color": "#0033a0",
-            "altColor": "#d64309",
-            "conferenceId": "9",
-            "rank": 23,
+            "id": "256",
+            "school": "James Madison",
+            "mascot": "Dukes",
+            "abbrev": "JMU",
+            "displayName": "James Madison Dukes",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/256.png",
+            "color": "#450084",
+            "altColor": "#cbb677",
+            "conferenceId": "37",
+            "rank": null,
             "homeAway": "away"
           }
         },
@@ -19738,7 +19738,7 @@
             "state": "AZ"
           },
           "broadcast": "FS1",
-          "status": "STATUS_SCHEDULED",
+          "status": "STATUS_FINAL",
           "home": {
             "id": "9",
             "school": "Arizona State",
@@ -19920,7 +19920,7 @@
             "city": "Huntsville",
             "state": "TX"
           },
-          "broadcast": "ESPN2",
+          "broadcast": "ESPN",
           "status": "STATUS_SCHEDULED",
           "home": {
             "id": "2534",
@@ -20214,226 +20214,6 @@
           }
         },
         {
-          "id": "401856833",
-          "date": "2026-10-17T16:00Z",
-          "timeTbd": true,
-          "week": 7,
-          "seasonType": 2,
-          "name": "Utah Utes at Colorado Buffaloes",
-          "shortName": "UTAH @ COLO",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Folsom Field",
-            "city": "Boulder",
-            "state": "CO"
-          },
-          "broadcast": null,
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "38",
-            "school": "Colorado",
-            "mascot": "Buffaloes",
-            "abbrev": "COLO",
-            "displayName": "Colorado Buffaloes",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/38.png",
-            "color": "#cfb87c",
-            "altColor": "#000000",
-            "conferenceId": "4",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "254",
-            "school": "Utah",
-            "mascot": "Utes",
-            "abbrev": "UTAH",
-            "displayName": "Utah Utes",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/254.png",
-            "color": "#be0000",
-            "altColor": "#ffffff",
-            "conferenceId": "4",
-            "rank": 12,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401858492",
-          "date": "2026-10-17T16:00Z",
-          "timeTbd": true,
-          "week": 7,
-          "seasonType": 2,
-          "name": "Nebraska Cornhuskers at Oregon Ducks",
-          "shortName": "NEB @ ORE",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Autzen Stadium",
-            "city": "Eugene",
-            "state": "OR"
-          },
-          "broadcast": null,
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "2483",
-            "school": "Oregon",
-            "mascot": "Ducks",
-            "abbrev": "ORE",
-            "displayName": "Oregon Ducks",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png",
-            "color": "#00934b",
-            "altColor": "#fff41b",
-            "conferenceId": "5",
-            "rank": 13,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "158",
-            "school": "Nebraska",
-            "mascot": "Cornhuskers",
-            "abbrev": "NEB",
-            "displayName": "Nebraska Cornhuskers",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png",
-            "color": "#e31937",
-            "altColor": "#ffffff",
-            "conferenceId": "5",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401858494",
-          "date": "2026-10-17T16:00Z",
-          "timeTbd": true,
-          "week": 7,
-          "seasonType": 2,
-          "name": "Wisconsin Badgers at UCLA Bruins",
-          "shortName": "WIS @ UCLA",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Rose Bowl",
-            "city": "Pasadena",
-            "state": "CA"
-          },
-          "broadcast": null,
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "26",
-            "school": "UCLA",
-            "mascot": "Bruins",
-            "abbrev": "UCLA",
-            "displayName": "UCLA Bruins",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/26.png",
-            "color": "#2774ae",
-            "altColor": "#f2a900",
-            "conferenceId": "5",
-            "rank": 21,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "275",
-            "school": "Wisconsin",
-            "mascot": "Badgers",
-            "abbrev": "WIS",
-            "displayName": "Wisconsin Badgers",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/275.png",
-            "color": "#a00000",
-            "altColor": "#ffffff",
-            "conferenceId": "5",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401858269",
-          "date": "2026-10-17T16:00Z",
-          "timeTbd": true,
-          "week": 7,
-          "seasonType": 2,
-          "name": "Wake Forest Demon Deacons at California Golden Bears",
-          "shortName": "WAKE @ CAL",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "California Memorial Stadium",
-            "city": "Berkeley",
-            "state": "CA"
-          },
-          "broadcast": null,
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "25",
-            "school": "California",
-            "mascot": "Golden Bears",
-            "abbrev": "CAL",
-            "displayName": "California Golden Bears",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/25.png",
-            "color": "#041e42",
-            "altColor": "#ffc72c",
-            "conferenceId": "1",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "154",
-            "school": "Wake Forest",
-            "mascot": "Demon Deacons",
-            "abbrev": "WAKE",
-            "displayName": "Wake Forest Demon Deacons",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/154.png",
-            "color": "#ceb888",
-            "altColor": "#2c2a29",
-            "conferenceId": "1",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
-          "id": "401858490",
-          "date": "2026-10-17T16:00Z",
-          "timeTbd": true,
-          "week": 7,
-          "seasonType": 2,
-          "name": "Penn State Nittany Lions at Michigan Wolverines",
-          "shortName": "PSU @ MICH",
-          "neutralSite": false,
-          "conferenceGame": true,
-          "venue": {
-            "name": "Michigan Stadium",
-            "city": "Ann Arbor",
-            "state": "MI"
-          },
-          "broadcast": null,
-          "status": "STATUS_SCHEDULED",
-          "home": {
-            "id": "130",
-            "school": "Michigan",
-            "mascot": "Wolverines",
-            "abbrev": "MICH",
-            "displayName": "Michigan Wolverines",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png",
-            "color": "#00274c",
-            "altColor": "#ffcb05",
-            "conferenceId": "5",
-            "rank": null,
-            "homeAway": "home"
-          },
-          "away": {
-            "id": "213",
-            "school": "Penn State",
-            "mascot": "Nittany Lions",
-            "abbrev": "PSU",
-            "displayName": "Penn State Nittany Lions",
-            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png",
-            "color": "#061440",
-            "altColor": "#ffffff",
-            "conferenceId": "5",
-            "rank": null,
-            "homeAway": "away"
-          }
-        },
-        {
           "id": "401856724",
           "date": "2026-10-17T16:00Z",
           "timeTbd": false,
@@ -20448,7 +20228,7 @@
             "city": "Austin",
             "state": "TX"
           },
-          "broadcast": null,
+          "broadcast": "ABC",
           "status": "STATUS_SCHEDULED",
           "home": {
             "id": "251",
@@ -20536,7 +20316,7 @@
             "city": "Baton Rouge",
             "state": "LA"
           },
-          "broadcast": null,
+          "broadcast": "ESPN",
           "status": "STATUS_SCHEDULED",
           "home": {
             "id": "99",
@@ -21196,7 +20976,7 @@
             "city": "Athens",
             "state": "GA"
           },
-          "broadcast": null,
+          "broadcast": "ESPN",
           "status": "STATUS_SCHEDULED",
           "home": {
             "id": "61",
@@ -21240,7 +21020,7 @@
             "city": "Knoxville",
             "state": "TN"
           },
-          "broadcast": null,
+          "broadcast": "ABC",
           "status": "STATUS_SCHEDULED",
           "home": {
             "id": "2633",
@@ -21284,7 +21064,7 @@
             "city": "Oxford",
             "state": "MS"
           },
-          "broadcast": null,
+          "broadcast": "SEC Network",
           "status": "STATUS_SCHEDULED",
           "home": {
             "id": "145",
@@ -21441,6 +21221,50 @@
             "color": "#7bafd4",
             "altColor": "#13294b",
             "conferenceId": "1",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401858490",
+          "date": "2026-10-17T19:30Z",
+          "timeTbd": false,
+          "week": 7,
+          "seasonType": 2,
+          "name": "Penn State Nittany Lions at Michigan Wolverines",
+          "shortName": "PSU @ MICH",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Michigan Stadium",
+            "city": "Ann Arbor",
+            "state": "MI"
+          },
+          "broadcast": null,
+          "status": "STATUS_SCHEDULED",
+          "home": {
+            "id": "130",
+            "school": "Michigan",
+            "mascot": "Wolverines",
+            "abbrev": "MICH",
+            "displayName": "Michigan Wolverines",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png",
+            "color": "#00274c",
+            "altColor": "#ffcb05",
+            "conferenceId": "5",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "213",
+            "school": "Penn State",
+            "mascot": "Nittany Lions",
+            "abbrev": "PSU",
+            "displayName": "Penn State Nittany Lions",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png",
+            "color": "#061440",
+            "altColor": "#ffffff",
+            "conferenceId": "5",
             "rank": null,
             "homeAway": "away"
           }
@@ -22106,6 +21930,50 @@
           }
         },
         {
+          "id": "401858494",
+          "date": "2026-10-17T23:30Z",
+          "timeTbd": false,
+          "week": 7,
+          "seasonType": 2,
+          "name": "Wisconsin Badgers at UCLA Bruins",
+          "shortName": "WIS @ UCLA",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Rose Bowl",
+            "city": "Pasadena",
+            "state": "CA"
+          },
+          "broadcast": "NBC",
+          "status": "STATUS_SCHEDULED",
+          "home": {
+            "id": "26",
+            "school": "UCLA",
+            "mascot": "Bruins",
+            "abbrev": "UCLA",
+            "displayName": "UCLA Bruins",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/26.png",
+            "color": "#2774ae",
+            "altColor": "#f2a900",
+            "conferenceId": "5",
+            "rank": 21,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "275",
+            "school": "Wisconsin",
+            "mascot": "Badgers",
+            "abbrev": "WIS",
+            "displayName": "Wisconsin Badgers",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/275.png",
+            "color": "#a00000",
+            "altColor": "#ffffff",
+            "conferenceId": "5",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
           "id": "401856722",
           "date": "2026-10-17T23:30Z",
           "timeTbd": false,
@@ -22414,6 +22282,94 @@
           }
         },
         {
+          "id": "401856833",
+          "date": "2026-10-18T02:15Z",
+          "timeTbd": false,
+          "week": 7,
+          "seasonType": 2,
+          "name": "Utah Utes at Colorado Buffaloes",
+          "shortName": "UTAH @ COLO",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Folsom Field",
+            "city": "Boulder",
+            "state": "CO"
+          },
+          "broadcast": "ESPN",
+          "status": "STATUS_SCHEDULED",
+          "home": {
+            "id": "38",
+            "school": "Colorado",
+            "mascot": "Buffaloes",
+            "abbrev": "COLO",
+            "displayName": "Colorado Buffaloes",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/38.png",
+            "color": "#cfb87c",
+            "altColor": "#000000",
+            "conferenceId": "4",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "254",
+            "school": "Utah",
+            "mascot": "Utes",
+            "abbrev": "UTAH",
+            "displayName": "Utah Utes",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/254.png",
+            "color": "#be0000",
+            "altColor": "#ffffff",
+            "conferenceId": "4",
+            "rank": 12,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401858269",
+          "date": "2026-10-18T02:30Z",
+          "timeTbd": false,
+          "week": 7,
+          "seasonType": 2,
+          "name": "Wake Forest Demon Deacons at California Golden Bears",
+          "shortName": "WAKE @ CAL",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "California Memorial Stadium",
+            "city": "Berkeley",
+            "state": "CA"
+          },
+          "broadcast": "ESPN2",
+          "status": "STATUS_SCHEDULED",
+          "home": {
+            "id": "25",
+            "school": "California",
+            "mascot": "Golden Bears",
+            "abbrev": "CAL",
+            "displayName": "California Golden Bears",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/25.png",
+            "color": "#041e42",
+            "altColor": "#ffc72c",
+            "conferenceId": "1",
+            "rank": null,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "154",
+            "school": "Wake Forest",
+            "mascot": "Demon Deacons",
+            "abbrev": "WAKE",
+            "displayName": "Wake Forest Demon Deacons",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/154.png",
+            "color": "#ceb888",
+            "altColor": "#2c2a29",
+            "conferenceId": "1",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
           "id": "401860904",
           "date": "2026-10-18T02:30Z",
           "timeTbd": false,
@@ -22497,6 +22453,50 @@
             "color": "#ba0c2f",
             "altColor": "#a7a8aa",
             "conferenceId": "17",
+            "rank": null,
+            "homeAway": "away"
+          }
+        },
+        {
+          "id": "401858492",
+          "date": "2026-10-18T03:00Z",
+          "timeTbd": false,
+          "week": 7,
+          "seasonType": 2,
+          "name": "Nebraska Cornhuskers at Oregon Ducks",
+          "shortName": "NEB @ ORE",
+          "neutralSite": false,
+          "conferenceGame": true,
+          "venue": {
+            "name": "Autzen Stadium",
+            "city": "Eugene",
+            "state": "OR"
+          },
+          "broadcast": "Fox",
+          "status": "STATUS_SCHEDULED",
+          "home": {
+            "id": "2483",
+            "school": "Oregon",
+            "mascot": "Ducks",
+            "abbrev": "ORE",
+            "displayName": "Oregon Ducks",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png",
+            "color": "#00934b",
+            "altColor": "#fff41b",
+            "conferenceId": "5",
+            "rank": 13,
+            "homeAway": "home"
+          },
+          "away": {
+            "id": "158",
+            "school": "Nebraska",
+            "mascot": "Cornhuskers",
+            "abbrev": "NEB",
+            "displayName": "Nebraska Cornhuskers",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png",
+            "color": "#e31937",
+            "altColor": "#ffffff",
+            "conferenceId": "5",
             "rank": null,
             "homeAway": "away"
           }
